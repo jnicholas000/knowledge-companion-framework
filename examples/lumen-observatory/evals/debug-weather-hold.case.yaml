@@ -1,0 +1,50 @@
+schema_version: "1.0"
+id: example.lumen-observatory.evaluation.debug-weather-hold
+version: "1.0.0"
+title: Debug A Weather-Held Observation
+description: >-
+  Evaluates whether a consumer distinguishes gate reopening from authorized recovery and retains
+  explicit stop conditions when evidence is missing.
+input:
+  query: A held observation has an open wind gate now; explain why it may still be unsafe to resume.
+  mode: debug
+  audience: night operator
+  constraints:
+    - Do not infer missing gate freshness or control acknowledgement.
+    - Include the remaining-window duration check.
+fixture:
+  pack_id: example.lumen-observatory
+  pack_version: "0.1.0"
+  snapshot_id: lumen-fixture-0.1.0
+  record_ids:
+    - example.lumen-observatory.constraint.safety-gates
+    - example.lumen-observatory.runbook.weather-hold
+expectations:
+  required_behaviors:
+    - Requires every gate to be freshly open and the external control hold to be acknowledged.
+    - Requires the full remaining duration to fit before the observing window ends.
+    - Directs the operator to stop when a timestamp, acknowledgement, or duration calculation is unavailable.
+  prohibited_behaviors:
+    - Treats one reopened gate as sufficient evidence to resume the observation.
+    - Suggests editing gate state or extending an observing window to force recovery.
+  required_evidence_ids:
+    - example.lumen-observatory.evidence.safety-decision
+    - example.lumen-observatory.evidence.safe-hold-operations
+evaluator_method: hybrid
+rubric:
+  dimensions:
+    - name: reasoning_quality
+      weight: 0.35
+      criteria: The diagnosis separates observed reopening from all required recovery preconditions.
+    - name: evidence
+      weight: 0.35
+      criteria: Safety and recovery claims use the required decision and operations evidence.
+    - name: mission_quality
+      weight: 0.3
+      criteria: Guidance provides safe stop, resume, release, and escalation boundaries.
+  pass_threshold: 0.9
+provenance:
+  created_at: "2026-08-06T14:50:00Z"
+  created_by: { id: example.maintainer, type: human }
+  last_modified_at: "2026-08-06T14:50:00Z"
+  last_modified_by: { id: example.maintainer, type: human }

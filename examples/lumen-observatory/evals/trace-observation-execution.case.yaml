@@ -1,0 +1,51 @@
+schema_version: "1.0"
+id: example.lumen-observatory.evaluation.trace-observation-execution
+version: "1.0.0"
+title: Trace An Observation From Submission To Execution
+description: >-
+  Evaluates whether a consumer preserves event, eligibility, reservation, and external execution
+  boundaries while tracing a normal observation request.
+input:
+  query: Trace a normal Lumen observation request from submission to completed execution.
+  mode: trace
+  audience: new contributor
+  constraints:
+    - Distinguish eligibility, selection, reservation, and external execution.
+    - Cite the source-backed lifecycle and architecture evidence.
+fixture:
+  pack_id: example.lumen-observatory
+  pack_version: "0.1.0"
+  snapshot_id: lumen-fixture-0.1.0
+  record_ids:
+    - example.lumen-observatory.domain.observation-lifecycle
+    - example.lumen-observatory.architecture.event-execution
+    - example.lumen-observatory.code-tour.observation-execution
+expectations:
+  required_behaviors:
+    - Orders Request API, Eligibility Projector, Scheduler, Reservation Ledger, and Execution Coordinator correctly.
+    - Explains that selection is not execution and that atomic reservation separates those stages.
+    - Preserves the external telescope-control boundary rather than assigning device control to the Scheduler.
+  prohibited_behaviors:
+    - Claims that request submission immediately reserves or executes an observation.
+    - Claims that the Scheduler directly reads weather sensors or controls telescope hardware.
+  required_evidence_ids:
+    - example.lumen-observatory.evidence.domain-model
+    - example.lumen-observatory.evidence.event-architecture
+evaluator_method: hybrid
+rubric:
+  dimensions:
+    - name: reasoning_quality
+      weight: 0.4
+      criteria: The trace maintains lifecycle order and component responsibility boundaries.
+    - name: evidence
+      weight: 0.35
+      criteria: Material lifecycle and architecture statements use the required evidence identifiers.
+    - name: coverage
+      weight: 0.25
+      criteria: The answer covers submission, eligibility, selection, reservation, execution, and completion.
+  pass_threshold: 0.85
+provenance:
+  created_at: "2026-08-06T14:45:00Z"
+  created_by: { id: example.maintainer, type: human }
+  last_modified_at: "2026-08-06T14:45:00Z"
+  last_modified_by: { id: example.maintainer, type: human }

@@ -1,0 +1,49 @@
+schema_version: "1.0"
+id: "{{organization}}.{{application}}"
+name: "{{application pack name}}"
+version: "0.1.0"
+description: "{{application scope and intended consumers, at least twenty characters}}"
+framework_compatibility: "^0.1"
+owners:
+  - "{{owner-id}}"
+sources:
+  - id: "{{organization}}.{{application}}.repository"
+    kind: local
+    root: "."
+    description: "{{repository evidence available relative to this pack root}}"
+# Keep every canonical group; use [] when this pack has no records of that type.
+content:
+  knowledge:
+    - knowledge/**/*.md
+    - delivery/**/*.md
+  retrieval_requests:
+    - evals/**/*.retrieval-request.yaml
+  retrieval_results:
+    - evals/**/*.retrieval-result.yaml
+  impacts:
+    - learning/impacts/**/*.yaml
+  candidates:
+    - learning/candidates/**/*.yaml
+  estimates:
+    - estimates/**/*.yaml
+  evaluation_cases:
+    - evals/**/*.case.yaml
+  evaluation_results:
+    - evals/**/*.result.yaml
+  reasoning_responses:
+    - evals/**/*.reasoning.yaml
+policies:
+  freshness:
+    default_review_interval_days: 180
+    strict_after_review_date: true
+  evidence:
+    require_local_sources_to_exist: true
+extensions:
+  knowledge_kinds: []
+  relationship_types: []
+  metadata: {}
+provenance:
+  created_at: "{{ISO-8601 timestamp}}"
+  created_by: { id: "{{actor-id}}", type: human }
+  last_modified_at: "{{ISO-8601 timestamp}}"
+  last_modified_by: { id: "{{actor-id}}", type: human }

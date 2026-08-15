@@ -1,0 +1,29 @@
+{
+  "name": "knowledge-companion-framework",
+  "version": "0.1.0",
+  "description": "Contract-first foundation for durable software knowledge companions",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "knowledge-companion": "./src/cli.js"
+  },
+  "scripts": {
+    "check:ci": "npm test && npm run validate:schemas && npm run validate && npm run check:syntax && npm run check:standalone && npm audit --audit-level=high && git diff --check",
+    "check:standalone": "node ./scripts/check-standalone.mjs",
+    "check:syntax": "node --check src/cli.js && node --check src/change-set.js && node --check src/diagnostics.js && node --check src/evaluation.js && node --check src/formats.js && node --check src/interchange.js && node --check src/knowledge-impact.js && node --check src/schema-catalog.js && node --check src/snapshot-interchange.js && node --check src/validator.js",
+    "test": "node --test",
+    "validate": "node ./src/cli.js validate ./examples/atlas-notes --strict && node ./src/cli.js validate ./examples/lumen-observatory --strict",
+    "validate:schemas": "node ./src/cli.js schemas"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "fast-glob": "^3.3.3",
+    "micromatch": "^4.0.8",
+    "yaml": "^2.8.0"
+  }
+}

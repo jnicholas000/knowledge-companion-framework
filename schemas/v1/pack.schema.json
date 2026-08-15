@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/pack.schema.json",
+  "title": "Application Pack Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "version",
+    "description",
+    "framework_compatibility",
+    "owners",
+    "sources",
+    "content",
+    "policies",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "name": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "description": { "type": "string", "minLength": 20, "maxLength": 500 },
+    "framework_compatibility": {
+      "type": "string",
+      "pattern": "^[~^]?[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/source" }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "knowledge",
+        "retrieval_requests",
+        "retrieval_results",
+        "impacts",
+        "candidates",
+        "estimates",
+        "evaluation_cases",
+        "evaluation_results"
+      ],
+      "properties": {
+        "knowledge": { "$ref": "#/$defs/globs" },
+        "retrieval_requests": { "$ref": "#/$defs/globs" },
+        "retrieval_results": { "$ref": "#/$defs/globs" },
+        "impacts": { "$ref": "#/$defs/globs" },
+        "candidates": { "$ref": "#/$defs/globs" },
+        "estimates": { "$ref": "#/$defs/globs" },
+        "evaluation_cases": { "$ref": "#/$defs/globs" },
+        "evaluation_results": { "$ref": "#/$defs/globs" },
+        "reasoning_responses": { "$ref": "#/$defs/globs" }
+      }
+    },
+    "policies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["freshness", "evidence"],
+      "properties": {
+        "freshness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["default_review_interval_days", "strict_after_review_date"],
+          "properties": {
+            "default_review_interval_days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3650
+            },
+            "strict_after_review_date": { "type": "boolean" }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["require_local_sources_to_exist"],
+          "properties": {
+            "require_local_sources_to_exist": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "knowledge_kinds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/vocabularyDeclaration" }
+        },
+        "relationship_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/vocabularyDeclaration" }
+        },
+        "metadata": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+        }
+      }
+    },
+    "provenance": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "globs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+      }
+    },
+    "vocabularyDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "owner"],
+      "properties": {
+        "name": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensionEnum"
+        },
+        "description": { "type": "string", "minLength": 10 },
+        "owner": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "description"],
+      "properties": {
+        "id": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["local", "git", "web", "artifact"]
+        },
+        "description": { "type": "string", "minLength": 10 },
+        "root": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+        },
+        "uri": { "type": "string", "format": "uri" },
+        "extensions": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "local" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": { "root": true },
+            "required": ["root"]
+          },
+          "else": {
+            "properties": { "uri": true },
+            "required": ["uri"]
+          }
+        }
+      ]
+    }
+  }
+}

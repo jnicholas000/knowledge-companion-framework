@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/common.schema.json",
+  "title": "Knowledge Companion Common Definitions",
+  "$defs": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "extensionEnum": {
+      "type": "string",
+      "pattern": "^x-[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$"
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+$"
+      },
+      "additionalProperties": true,
+      "default": {}
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": {
+          "type": "string",
+          "enum": ["human", "ai", "automation", "system"]
+        },
+        "display_name": { "type": "string", "minLength": 1 },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_at", "created_by", "last_modified_at", "last_modified_by"],
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "created_by": { "$ref": "#/$defs/actor" },
+        "last_modified_at": { "type": "string", "format": "date-time" },
+        "last_modified_by": { "$ref": "#/$defs/actor" },
+        "source_revision": { "type": "string", "minLength": 1 },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source_id", "kind", "locator", "observed_at", "description"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "source_id": { "$ref": "#/$defs/identifier" },
+        "kind": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "source_file",
+                "test",
+                "commit",
+                "issue",
+                "decision_record",
+                "external_document",
+                "interview",
+                "observation",
+                "generated_artifact"
+              ]
+            },
+            { "$ref": "#/$defs/extensionEnum" }
+          ]
+        },
+        "locator": { "type": "string", "minLength": 1 },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "revision": { "type": "string", "minLength": 1 },
+        "digest": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*:[A-Fa-f0-9]+$"
+        },
+        "description": { "type": "string", "minLength": 10 },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+    "epistemicStatus": {
+      "type": "string",
+      "enum": [
+        "verified_fact",
+        "historical_knowledge",
+        "supported_conclusion",
+        "inference",
+        "uncertainty"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "epistemic_status", "confidence", "evidence_refs"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "statement": { "type": "string", "minLength": 10 },
+        "epistemic_status": { "$ref": "#/$defs/epistemicStatus" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "uniqueItems": true
+        },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "epistemic_status": {
+                "enum": ["verified_fact", "historical_knowledge", "supported_conclusion"]
+              }
+            },
+            "required": ["epistemic_status"]
+          },
+          "then": {
+            "properties": {
+              "evidence_refs": { "type": "array", "minItems": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target_kind", "target"],
+      "properties": {
+        "type": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "depends_on",
+                "implements",
+                "implemented_by",
+                "supersedes",
+                "superseded_by",
+                "related_to",
+                "contradicts",
+                "constrains",
+                "traces_to",
+                "validated_by"
+              ]
+            },
+            { "$ref": "#/$defs/extensionEnum" }
+          ]
+        },
+        "target_kind": {
+          "type": "string",
+          "enum": ["knowledge", "code", "external"]
+        },
+        "target": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 10 },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+    "invalidationTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "value", "description"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["path_changed", "dependency_changed", "event", "manual"]
+        },
+        "value": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 10 },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["last_verified_at", "review_after", "invalidation_triggers"],
+      "properties": {
+        "last_verified_at": { "type": "string", "format": "date-time" },
+        "review_after": { "type": "string", "format": "date" },
+        "invalidation_triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/invalidationTrigger" }
+        },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    }
+  }
+}

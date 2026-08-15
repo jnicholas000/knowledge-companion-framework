@@ -1,0 +1,74 @@
+schema_version: "1.0"
+id: example.atlas-notes.estimate.export-command
+subject: Add a read-only command that exports all notes as newline-delimited JSON.
+completion_evidence:
+  - The command returns one valid JSON object per stored note in deterministic order.
+  - Existing add-note behavior and repository-port boundaries remain unchanged.
+knowledge_snapshot:
+  pack_id: example.atlas-notes
+  pack_version: "0.1.0"
+  snapshot_id: example-pack-0.1.0
+  record_ids:
+    - example.atlas-notes.architecture.boundaries
+    - example.atlas-notes.decision.repository-port
+    - example.atlas-notes.trace.add-note
+unit: person_days
+method:
+  name: three_point_correlated
+  rationale: >-
+    Work-item ranges are summed, while the overall high value retains one additional day for shared
+    command-to-adapter integration uncertainty.
+evidence:
+  - id: example.atlas-notes.evidence.export-analogue
+    source_id: example.atlas-notes.repository
+    kind: source_file
+    locator: sources/system-overview.md
+    observed_at: "2026-08-05T16:00:00Z"
+    revision: example-pack-0.1.0
+    description: The existing add-note sequence provides a bounded analogue for command-layer integration.
+assumptions:
+  - id: example.atlas-notes.estimate-assumption.no-filtering
+    statement: Export does not require filtering, remote transport, or a new persistence technology.
+    epistemic_status: inference
+    confidence: medium
+    evidence_refs: []
+work_items:
+  - id: example.atlas-notes.work-item.export-use-case
+    description: Define the export use case and repository read behavior with focused tests.
+    range: { low: 0.5, likely: 1, high: 2 }
+    depends_on: []
+    evidence_refs:
+      - example.atlas-notes.evidence.export-analogue
+  - id: example.atlas-notes.work-item.export-command
+    description: Add command parsing, newline-delimited presentation, and end-to-end verification.
+    range: { low: 0.5, likely: 1, high: 2 }
+    depends_on:
+      - example.atlas-notes.work-item.export-use-case
+    evidence_refs:
+      - example.atlas-notes.evidence.export-analogue
+range: { low: 1, likely: 2, high: 5 }
+confidence: medium
+confidence_rationale: >-
+  The component boundary is evidenced, but output escaping rules and the current test harness are not
+  represented in the fixture.
+primary_drivers:
+  - Two bounded work items cross the application and command presentation boundaries.
+  - Deterministic newline-delimited JSON output requires serialization and ordering tests.
+unknowns:
+  - The fixture does not establish current escaping coverage for newline and Unicode note text.
+comparable_completed_work:
+  - description: The existing add-note flow is a completed command-to-repository integration analogue.
+    evidence_refs:
+      - example.atlas-notes.evidence.export-analogue
+risks:
+  - description: Existing note text may contain newline or Unicode edge cases.
+    effect: Serialization tests and output-contract work may expand the presentation slice.
+    trigger: Fixture inspection shows raw string concatenation or no JSON serializer.
+exclusions:
+  - Remote export destinations and background synchronization.
+  - Import, filtering, compression, and schema migration.
+likely_variance_factors:
+  - Existing serializer and fixture coverage may reduce or expand the command presentation work.
+  - Discovery of additional repository implementations would expand integration verification.
+created_at: "2026-08-05T16:05:00Z"
+created_by: { id: example.estimator, type: human }

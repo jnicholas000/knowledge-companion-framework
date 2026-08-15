@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/knowledge-entry.schema.json",
+  "title": "Knowledge Entry Metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "kind",
+    "knowledge_areas",
+    "summary",
+    "status",
+    "owners",
+    "tags",
+    "applies_to",
+    "evidence",
+    "claims",
+    "relationships",
+    "freshness",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "title": { "type": "string", "minLength": 3, "maxLength": 160 },
+    "kind": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "concept",
+            "architecture",
+            "decision",
+            "trace",
+            "pattern",
+            "constraint",
+            "runbook",
+            "glossary",
+            "mission_guide",
+            "code_tour",
+            "task_guide",
+            "onboarding"
+          ]
+        },
+        {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensionEnum"
+        }
+      ]
+    },
+    "knowledge_areas": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "identity",
+          "domain_model",
+          "architecture",
+          "code",
+          "business",
+          "operational",
+          "historical"
+        ]
+      }
+    },
+    "summary": { "type": "string", "minLength": 20, "maxLength": 500 },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "accepted", "superseded", "deprecated"]
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+    },
+    "applies_to": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/evidence"
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/claim"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/relationship"
+      }
+    },
+    "freshness": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/freshness"
+    },
+    "provenance": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/provenance"
+    },
+    "extensions": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "superseded" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "relationships": {
+            "type": "array",
+            "contains": {
+              "type": "object",
+              "properties": { "type": { "const": "superseded_by" } },
+              "required": ["type"]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

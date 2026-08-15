@@ -1,0 +1,57 @@
+schema_version: "1.0"
+id: example.atlas-notes.reasoning.explain-boundaries
+request:
+  query: Explain the Atlas Notes architecture and why persistence is behind a port.
+  mode: explain
+  audience: new-contributor
+  constraints:
+    - Distinguish observed architecture from historical rationale.
+knowledge_snapshot:
+  pack_id: example.atlas-notes
+  pack_version: "0.1.0"
+  snapshot_id: example-pack-0.1.0
+  record_ids:
+    - example.atlas-notes.architecture.boundaries
+    - example.atlas-notes.decision.repository-port
+retrieval_result_id: example.atlas-notes.retrieval-result.explain-boundaries
+answer: >-
+  The parser translates input, NoteApplicationService owns validation and orchestration,
+  NoteRepository is the application-facing persistence port, and JsonFileNoteRepository owns file
+  I/O. The port was selected to keep use cases testable without disk I/O and allow persistence to
+  change independently.
+evidence:
+  - id: example.atlas-notes.evidence.system-overview
+    source_id: example.atlas-notes.repository
+    kind: source_file
+    locator: sources/system-overview.md
+    observed_at: "2026-08-05T17:05:00Z"
+    revision: example-pack-0.1.0
+    description: The system overview defines current component responsibilities and dependency direction.
+  - id: example.atlas-notes.evidence.repository-decision
+    source_id: example.atlas-notes.repository
+    kind: decision_record
+    locator: sources/decisions/001-repository-port.md
+    observed_at: "2026-08-05T17:05:00Z"
+    revision: example-pack-0.1.0
+    description: The decision record explains the historical rationale for the repository port.
+claims:
+  - id: example.atlas-notes.response-claim.component-boundaries
+    statement: The application service depends on NoteRepository while the JSON adapter implements storage details.
+    epistemic_status: verified_fact
+    confidence: high
+    evidence_refs:
+      - example.atlas-notes.evidence.system-overview
+  - id: example.atlas-notes.response-claim.port-rationale
+    statement: The repository port was selected to make use cases testable without disk I/O and permit adapter replacement.
+    epistemic_status: historical_knowledge
+    confidence: high
+    evidence_refs:
+      - example.atlas-notes.evidence.repository-decision
+unknowns:
+  - The fixture does not identify the programming language or concrete test framework.
+recommended_actions:
+  - Read the add-note trace before changing the command flow.
+generated_at: "2026-08-05T17:05:00Z"
+generated_by:
+  id: example.reasoner
+  type: ai

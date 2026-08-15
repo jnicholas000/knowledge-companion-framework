@@ -1,0 +1,505 @@
+{
+  "fixture_version": "1.0",
+  "review_state": "independently_reviewed",
+  "rules_reference": "docs/architecture/evaluation.md#phase-two-static-evaluation-evidence",
+  "packs": {
+    "example.atlas-notes": {
+      "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+      "pack_revision": "0.1.0"
+    },
+    "example.lumen-observatory": {
+      "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd",
+      "pack_revision": "0.1.0"
+    }
+  },
+  "cases": [
+    {
+      "id": "atlas.direct-source-modified",
+      "description": "A directly cited Atlas source is modified and its historical dependency needs separate judgment.",
+      "pack_id": "example.atlas-notes",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.atlas-notes",
+        "base_revision": "atlas-base-01",
+        "target_revision": "atlas-target-01",
+        "observed_at": "2026-08-07T16:00:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/system-overview.md", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.atlas-notes.architecture.boundaries",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/system-overview.md"],
+            "truth_basis": "The record directly cites the modified source through evidence and applies_to."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.decision.repository-port",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/system-overview.md"],
+            "truth_basis": "The affected architecture explicitly points to the historical decision; repository evidence alone cannot establish whether its intent and rationale remain correct."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.onboarding.first-change",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/system-overview.md"],
+            "truth_basis": "The onboarding record directly cites the modified source through evidence."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.trace.add-note",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/system-overview.md"],
+            "truth_basis": "The trace directly cites the modified source through evidence and applies_to."
+          }
+        ]
+      }
+    },
+    {
+      "id": "lumen.direct-source-deleted",
+      "description": "A deleted operational source remains a direct impact trigger and exposes domain ambiguity through an explicit constraint relationship.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-base-01",
+        "target_revision": "lumen-target-01",
+        "observed_at": "2026-08-07T16:00:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/operations.md", "change_type": "deleted" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.lumen-observatory.constraint.safety-gates",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/operations.md"],
+            "truth_basis": "The constraint directly cites the deleted source through evidence and applies_to."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.domain.observation-lifecycle",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/operations.md"],
+            "truth_basis": "The directly affected safety constraint governs the business lifecycle, but repository evidence does not establish the resulting domain meaning."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.runbook.weather-hold",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/operations.md"],
+            "truth_basis": "The runbook directly cites the deleted source through evidence and applies_to."
+          }
+        ],
+        "excluded": [
+          {
+            "knowledge_id": "example.lumen-observatory.architecture.event-execution",
+            "truth_basis": "Its x-blocked-by edge points inbound to the directly matched safety record; inbound-only relationships do not propagate impact."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.code-tour.observation-execution",
+            "truth_basis": "Its x-blocked-by edge points inbound to the directly matched safety record; inbound-only relationships do not propagate impact."
+          }
+        ]
+      }
+    },
+    {
+      "id": "atlas.renamed-source-path",
+      "description": "A rename preserves the stale old path as the demonstrable trigger and the new path as review context.",
+      "pack_id": "example.atlas-notes",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.atlas-notes",
+        "base_revision": "atlas-base-02",
+        "target_revision": "atlas-target-02",
+        "observed_at": "2026-08-07T16:05:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          {
+            "path": "sources/system-architecture.md",
+            "old_path": "sources/system-overview.md",
+            "change_type": "renamed"
+          }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.atlas-notes.architecture.boundaries",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/system-architecture.md", "sources/system-overview.md"],
+            "truth_basis": "The renamed old path is directly cited and both rename endpoints must remain visible."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.decision.repository-port",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/system-architecture.md", "sources/system-overview.md"],
+            "truth_basis": "The affected architecture points to a historical decision whose continuing intent cannot be inferred from the rename."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.onboarding.first-change",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/system-architecture.md", "sources/system-overview.md"],
+            "truth_basis": "The onboarding evidence locator directly names the renamed old path."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.trace.add-note",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/system-architecture.md", "sources/system-overview.md"],
+            "truth_basis": "The trace evidence locator directly names the renamed old path."
+          }
+        ]
+      }
+    },
+    {
+      "id": "atlas.unrelated-file-added",
+      "description": "A complete change set adds an unrelated path outside all exact and glob declarations.",
+      "pack_id": "example.atlas-notes",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.atlas-notes",
+        "base_revision": "atlas-base-03",
+        "target_revision": "atlas-target-03",
+        "observed_at": "2026-08-07T16:10:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "tools/unrelated.txt", "change_type": "added" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "no_knowledge_change",
+        "affected": [],
+        "truth_basis": "The complete fixed input contains no exact path, declared glob, or explicit relationship signal for the added path."
+      }
+    },
+    {
+      "id": "atlas.related-architecture-path",
+      "description": "One changed decision path is direct for a decision and glob-related to broader architecture and onboarding records.",
+      "pack_id": "example.atlas-notes",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.atlas-notes",
+        "base_revision": "atlas-base-04",
+        "target_revision": "atlas-target-04",
+        "observed_at": "2026-08-07T16:15:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/decisions/001-repository-port.md", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.atlas-notes.architecture.boundaries",
+            "review_requirement": "interpretive",
+            "triggering_paths": ["sources/decisions/001-repository-port.md"],
+            "truth_basis": "The path matches the record's broader decisions glob and its related decision, so architectural meaning requires engineering judgment."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.decision.repository-port",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/decisions/001-repository-port.md"],
+            "truth_basis": "The modified decision evidence directly supports a historical-intent claim, so repository evidence cannot establish whether the rationale remains correct."
+          },
+          {
+            "knowledge_id": "example.atlas-notes.onboarding.first-change",
+            "review_requirement": "interpretive",
+            "triggering_paths": ["sources/decisions/001-repository-port.md"],
+            "truth_basis": "The path matches the broad source-document glob and the record depends on the affected decision; onboarding meaning requires judgment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "lumen.business-domain-ambiguity",
+      "description": "A domain source directly affects several records and reaches architecture and safety meaning through explicit knowledge relationships.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-base-02",
+        "target_revision": "lumen-target-02",
+        "observed_at": "2026-08-07T16:20:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/domain-model.md", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.lumen-observatory.architecture.event-execution",
+            "review_requirement": "interpretive",
+            "triggering_paths": ["sources/domain-model.md"],
+            "truth_basis": "The directly affected lifecycle is implemented by this architecture; deciding architectural impact requires engineering judgment."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.code-tour.observation-execution",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/domain-model.md"],
+            "truth_basis": "The tour directly cites the modified domain source."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.constraint.safety-gates",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/domain-model.md"],
+            "truth_basis": "The affected lifecycle is explicitly blocked by the safety constraint, but domain and operational policy meaning cannot be inferred from the changed source alone."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.domain.observation-lifecycle",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/domain-model.md"],
+            "truth_basis": "The lifecycle directly cites the modified domain source."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.mission-guide.add-instrument-mode",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/domain-model.md"],
+            "truth_basis": "The mission guide directly cites the modified domain source."
+          }
+        ]
+      }
+    },
+    {
+      "id": "lumen.weak-related-to-not-propagated",
+      "description": "A direct application-profile match must not spread through the weak related_to edge.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-base-weak-01",
+        "target_revision": "lumen-target-weak-01",
+        "observed_at": "2026-08-07T16:22:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/application-profile.md", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.lumen-observatory.identity.application",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/application-profile.md"],
+            "truth_basis": "The matched application-profile evidence is referenced by the record's explicit fairness/starvation uncertainty, which repository evidence alone cannot resolve."
+          }
+        ],
+        "excluded": [
+          {
+            "knowledge_id": "example.lumen-observatory.domain.observation-lifecycle",
+            "truth_basis": "The only edge from the directly matched identity record is related_to, which is intentionally not a propagating structural dependency."
+          }
+        ]
+      }
+    },
+    {
+      "id": "lumen.multiple-files-one-record",
+      "description": "Two changed files directly affect one architecture record and several other fixed-snapshot records.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-base-03",
+        "target_revision": "lumen-target-03",
+        "observed_at": "2026-08-07T16:25:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/test-matrix.md", "change_type": "modified" },
+          { "path": "sources/architecture.md", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.lumen-observatory.architecture.event-execution",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/architecture.md", "sources/test-matrix.md"],
+            "truth_basis": "Both changed files are direct evidence and applies_to references for the architecture record."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.code-tour.observation-execution",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/architecture.md"],
+            "truth_basis": "The tour directly cites the changed architecture source."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.constraint.safety-gates",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/test-matrix.md"],
+            "truth_basis": "The constraint directly cites the changed acceptance matrix."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.domain.observation-lifecycle",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/test-matrix.md"],
+            "truth_basis": "The lifecycle directly cites the changed acceptance matrix."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.mission-guide.add-instrument-mode",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/architecture.md", "sources/test-matrix.md"],
+            "truth_basis": "Both changed files are direct evidence and applies_to references for the mission guide."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.runbook.weather-hold",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/test-matrix.md"],
+            "truth_basis": "The runbook directly cites the changed acceptance matrix."
+          }
+        ]
+      }
+    },
+    {
+      "id": "lumen.complete-no-op",
+      "description": "A complete normalized no-op is explicit evidence for no knowledge change.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-same-01",
+        "target_revision": "lumen-same-01",
+        "observed_at": "2026-08-07T16:30:00.000Z",
+        "completeness": "complete",
+        "changes": [],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "no_knowledge_change",
+        "affected": [],
+        "truth_basis": "The normalized input is complete and explicitly contains no changed paths."
+      }
+    },
+    {
+      "id": "atlas.partial-unmatched",
+      "description": "A partial change set with no visible match must not become an unqualified no-change result.",
+      "pack_id": "example.atlas-notes",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.atlas-notes",
+        "base_revision": "atlas-base-05",
+        "target_revision": "atlas-target-05",
+        "observed_at": "2026-08-07T16:35:00.000Z",
+        "completeness": "partial",
+        "changes": [
+          { "path": "tools/unrelated.txt", "change_type": "modified" }
+        ],
+        "limitations": ["changed-file pagination was truncated"]
+      },
+      "expected": {
+        "outcome": "indeterminate",
+        "affected": [],
+        "limitations": ["changed-file pagination was truncated"],
+        "truth_basis": "Visible paths do not match, but omitted change evidence can still contain an impact signal."
+      }
+    },
+    {
+      "id": "atlas.near-neighbor-similar-path",
+      "description": "A similarly named backup path must not match an exact evidence locator or a Markdown-only glob.",
+      "pack_id": "example.atlas-notes",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.atlas-notes",
+        "base_revision": "atlas-base-06",
+        "target_revision": "atlas-target-06",
+        "observed_at": "2026-08-07T16:40:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/system-overview.md.bak", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "no_knowledge_change",
+        "affected": [],
+        "truth_basis": "Substring similarity is not a signal and sources/**/*.md does not match a .md.bak suffix."
+      }
+    },
+    {
+      "id": "lumen.near-neighbor-parent-child",
+      "description": "A child path beneath a file-shaped locator must not match the file itself.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-base-04",
+        "target_revision": "lumen-target-04",
+        "observed_at": "2026-08-07T16:45:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/architecture.md/notes", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "no_knowledge_change",
+        "affected": [],
+        "truth_basis": "Parent-prefix matching is forbidden and no record declares a glob covering this child path."
+      }
+    },
+    {
+      "id": "lumen.sme-policy-decision",
+      "description": "A directly changed historical policy and its constrained lifecycle require SME review, while inbound-only dependency edges remain excluded.",
+      "pack_id": "example.lumen-observatory",
+      "change_set": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.lumen-observatory",
+        "base_revision": "lumen-base-05",
+        "target_revision": "lumen-target-05",
+        "observed_at": "2026-08-07T16:50:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "sources/decisions/001-safety-gate-precedence.md", "change_type": "modified" }
+        ],
+        "limitations": []
+      },
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.lumen-observatory.constraint.safety-gates",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/decisions/001-safety-gate-precedence.md"],
+            "truth_basis": "The changed decision evidence directly supports the record's historical safety-policy claim, so continued intent requires SME review."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.domain.observation-lifecycle",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/decisions/001-safety-gate-precedence.md"],
+            "truth_basis": "The changed safety policy explicitly constrains a business lifecycle whose continuing meaning requires domain expertise."
+          }
+        ],
+        "excluded": [
+          {
+            "knowledge_id": "example.lumen-observatory.architecture.event-execution",
+            "truth_basis": "Its x-blocked-by edge is inbound to the directly matched safety record and therefore does not propagate."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.code-tour.observation-execution",
+            "truth_basis": "Its x-blocked-by edge is inbound to the directly matched safety record and therefore does not propagate."
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.runbook.weather-hold",
+            "truth_basis": "Its depends_on edge is inbound to the directly matched safety record and therefore does not propagate."
+          }
+        ]
+      }
+    }
+  ]
+}

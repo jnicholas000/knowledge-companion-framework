@@ -1,0 +1,28 @@
+schema_version: "1.0"
+id: example.atlas-notes.retrieval-result.explain-boundaries
+request_id: example.atlas-notes.retrieval-request.explain-boundaries
+knowledge_snapshot:
+  pack_id: example.atlas-notes
+  pack_version: "0.1.0"
+  snapshot_id: example-pack-0.1.0
+provider:
+  id: example.deterministic-fixture
+  version: "0.1.0"
+matches:
+  - record_id: example.atlas-notes.architecture.boundaries
+    rank: 1
+    score: 0.98
+    rationale: The architecture record directly explains current component boundaries.
+    matched_claim_ids:
+      - example.atlas-notes.claim.application-boundary
+      - example.atlas-notes.claim.repository-dependency
+  - record_id: example.atlas-notes.decision.repository-port
+    rank: 2
+    score: 0.93
+    rationale: The decision record directly explains why persistence uses a port.
+    matched_claim_ids:
+      - example.atlas-notes.claim.repository-port-selected
+      - example.atlas-notes.claim.repository-port-tradeoff
+limitations:
+  - This is a static conformance fixture and does not evaluate a live retrieval provider.
+completed_at: "2026-08-05T17:04:01Z"

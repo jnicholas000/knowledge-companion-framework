@@ -1,0 +1,52 @@
+schema_version: "1.0"
+id: example.atlas-notes.evaluation.explain-boundaries
+version: "1.0.0"
+title: Explain Architectural Boundaries
+description: >-
+  Verifies that an explanation preserves the parser, service, port, and adapter responsibilities and
+  cites the supplied application evidence.
+input:
+  query: Explain the Atlas Notes architecture and why persistence is behind a port.
+  mode: explain
+  audience: new-contributor
+  constraints:
+    - Distinguish observed architecture from historical rationale.
+fixture:
+  pack_id: example.atlas-notes
+  pack_version: "0.1.0"
+  snapshot_id: example-pack-0.1.0
+  record_ids:
+    - example.atlas-notes.architecture.boundaries
+    - example.atlas-notes.decision.repository-port
+expectations:
+  required_behaviors:
+    - Names parser, application service, repository port, and JSON adapter with distinct responsibilities.
+    - Distinguishes the current dependency fact from the historical decision rationale.
+    - Cites the system overview and repository decision evidence.
+  prohibited_behaviors:
+    - Claims the command parser directly accesses the JSON persistence adapter.
+    - Presents a database, vector store, or remote service as current architecture.
+  required_evidence_ids:
+    - example.atlas-notes.evidence.system-overview
+    - example.atlas-notes.evidence.repository-decision
+evaluator_method: hybrid
+rubric:
+  dimensions:
+    - name: knowledge_quality
+      weight: 0.25
+      criteria: Component responsibilities and scope match the accepted knowledge records.
+    - name: reasoning_quality
+      weight: 0.30
+      criteria: The explanation separates facts, historical knowledge, and supported conclusions.
+    - name: coverage
+      weight: 0.20
+      criteria: All four components and the reason for the port are covered.
+    - name: evidence
+      weight: 0.25
+      criteria: Material claims resolve to the two required evidence sources.
+  pass_threshold: 0.80
+provenance:
+  created_at: "2026-08-05T17:00:00Z"
+  created_by: { id: example.evaluator, type: human }
+  last_modified_at: "2026-08-05T17:00:00Z"
+  last_modified_by: { id: example.evaluator, type: human }

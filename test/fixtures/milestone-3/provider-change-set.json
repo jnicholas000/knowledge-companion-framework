@@ -1,0 +1,41 @@
+{
+  "fixture_version": "1",
+  "repository": {
+    "identity": "fixture.portable-repository",
+    "display_name": "Synthetic provider repository"
+  },
+  "revisions": {
+    "from": "{{base_revision}}",
+    "to": "{{target_revision}}"
+  },
+  "collected_at": "2026-08-07T16:00:00Z",
+  "page": {
+    "complete": true,
+    "limitations": [],
+    "cursor": "provider-only-cursor"
+  },
+  "files": [
+    {
+      "current_path": "src/renamed.js",
+      "previous_path": "src/original.js",
+      "action": "moved",
+      "provider_similarity": 100
+    },
+    {
+      "current_path": "docs/added.md",
+      "action": "created"
+    },
+    {
+      "current_path": "src/removed.js",
+      "action": "removed"
+    },
+    {
+      "current_path": "src/updated.js",
+      "action": "updated"
+    }
+  ],
+  "review_request": {
+    "number": 42,
+    "title": "Provider-only metadata must not leak"
+  }
+}

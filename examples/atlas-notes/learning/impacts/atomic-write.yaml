@@ -1,0 +1,22 @@
+schema_version: "1.0"
+id: example.atlas-notes.impact.atomic-write
+change:
+  id: fictional-change-42
+  base_revision: example-pack-0.1.0
+  head_revision: fictional-atomic-write
+  changed_paths:
+    - sources/decisions/002-atomic-write.md
+  observed_at: "2026-08-05T15:00:00Z"
+  limitations: []
+classification: knowledge_update_required
+rationale: >-
+  The new atomic-write decision adds a persistence guarantee that is not present in the accepted
+  repository-port knowledge record.
+affected_knowledge_ids:
+  - example.atlas-notes.decision.repository-port
+candidate_ids:
+  - example.atlas-notes.candidate.atomic-write
+declared_at: "2026-08-05T15:05:00Z"
+declared_by:
+  id: example.maintainer
+  type: human

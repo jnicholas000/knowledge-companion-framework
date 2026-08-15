@@ -1,0 +1,74 @@
+[
+  {
+    "case": "parse-failure",
+    "target": "knowledge/record.md",
+    "before": "schema_version: \"1.0\"",
+    "after": "schema_version: [",
+    "code": "parse.invalid",
+    "file": "knowledge/record.md",
+    "instance_path": "/"
+  },
+  {
+    "case": "missing-required-metadata",
+    "target": "pack.yaml",
+    "before": "name: Authoring Corpus Pack\n",
+    "after": "",
+    "code": "schema.invalid",
+    "file": "pack.yaml",
+    "instance_path": "/name"
+  },
+  {
+    "case": "invalid-reference",
+    "target": "knowledge/record.md",
+    "before": "relationships: []",
+    "after": "relationships:\n  - type: related_to\n    target_kind: knowledge\n    target: example.authoring-corpus.concept.missing",
+    "code": "reference.knowledge_missing",
+    "file": "knowledge/record.md",
+    "instance_path": "/relationships/0/target"
+  },
+  {
+    "case": "undeclared-extension",
+    "target": "knowledge/record.md",
+    "before": "relationships: []",
+    "after": "relationships:\n  - type: x-blocked-by\n    target_kind: knowledge\n    target: example.authoring-corpus.concept.record",
+    "code": "extension.relationship_undeclared",
+    "file": "knowledge/record.md",
+    "instance_path": "/relationships/0/type"
+  },
+  {
+    "case": "unknown-evidence-source",
+    "target": "knowledge/record.md",
+    "before": "source_id: example.authoring-corpus.repository",
+    "after": "source_id: example.authoring-corpus.unknown",
+    "code": "reference.source_missing",
+    "file": "knowledge/record.md",
+    "instance_path": "/evidence/0/source_id"
+  },
+  {
+    "case": "missing-evidence-path",
+    "target": "knowledge/record.md",
+    "before": "locator: sources/source.md",
+    "after": "locator: sources/missing.md",
+    "code": "evidence.path_missing",
+    "file": "knowledge/record.md",
+    "instance_path": "/evidence/0/locator"
+  },
+  {
+    "case": "freshness-problem",
+    "target": "knowledge/record.md",
+    "before": "review_after: \"2027-08-07\"",
+    "after": "review_after: \"2026-01-01\"",
+    "code": "freshness.review_due",
+    "file": "knowledge/record.md",
+    "instance_path": "/freshness/review_after"
+  },
+  {
+    "case": "snapshot-mismatch",
+    "target": "evals/control.case.yaml",
+    "before": "pack_id: example.authoring-corpus",
+    "after": "pack_id: example.other-pack",
+    "code": "snapshot.pack_mismatch",
+    "file": "evals/control.case.yaml",
+    "instance_path": "/fixture/pack_id"
+  }
+]

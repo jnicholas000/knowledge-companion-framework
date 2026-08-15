@@ -1,0 +1,22 @@
+schema_version: "1.0"
+id: "{{pack-id}}.impact.{{change-slug}}"
+change:
+  id: "{{repository change identifier}}"
+  base_revision: "{{base revision}}"
+  head_revision: "{{head revision}}"
+  changed_paths:
+    - "{{changed/path}}"
+  observed_at: "{{ISO-8601 timestamp}}"
+  limitations: []
+classification: knowledge_update_required
+rationale: "{{why accepted knowledge is or is not affected}}"
+affected_knowledge_ids:
+  - "{{pack-id}}.{{kind}}.{{slug}}"
+candidate_ids:
+  - "{{pack-id}}.candidate.{{change-slug}}"
+declared_at: "{{ISO-8601 timestamp}}"
+declared_by:
+  id: "{{actor-id}}"
+  type: human
+
+# For `no_knowledge_change`, both ID arrays must be empty and the rationale must remain substantive.

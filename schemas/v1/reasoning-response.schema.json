@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/reasoning-response.schema.json",
+  "title": "Reasoning Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "request",
+    "knowledge_snapshot",
+    "answer",
+    "evidence",
+    "claims",
+    "unknowns",
+    "generated_at",
+    "generated_by"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query", "mode"],
+      "properties": {
+        "query": { "type": "string", "minLength": 3 },
+        "mode": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["explain", "compare", "trace", "debug", "estimate", "plan"]
+            },
+            {
+              "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensionEnum"
+            }
+          ]
+        },
+        "audience": { "type": "string", "minLength": 1 },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "knowledge_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_id", "pack_version", "snapshot_id", "record_ids"],
+      "properties": {
+        "pack_id": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+        },
+        "pack_version": { "type": "string", "minLength": 1 },
+        "snapshot_id": { "type": "string", "minLength": 1 },
+        "record_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "answer": { "type": "string", "minLength": 20 },
+    "retrieval_result_id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/evidence"
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/claim"
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 5 }
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 5 }
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "generated_by": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/actor"
+    },
+    "extensions": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+    }
+  }
+}

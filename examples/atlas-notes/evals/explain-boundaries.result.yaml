@@ -1,0 +1,55 @@
+schema_version: "1.0"
+id: example.atlas-notes.evaluation-result.explain-boundaries
+case_id: example.atlas-notes.evaluation.explain-boundaries
+case_version: "1.0.0"
+system_under_test:
+  id: example.static-reasoning-fixture
+  version: "0.1.0"
+  configuration_digest: sha256:abc123
+knowledge_snapshot:
+  pack_id: example.atlas-notes
+  pack_version: "0.1.0"
+  snapshot_id: example-pack-0.1.0
+evaluator:
+  id: example.evaluator
+  type: human
+started_at: "2026-08-05T17:10:00Z"
+completed_at: "2026-08-05T17:12:00Z"
+evidence:
+  - id: example.atlas-notes.evidence.evaluation-output
+    source_id: example.atlas-notes.repository
+    kind: generated_artifact
+    locator: evals/explain-boundaries.reasoning.yaml
+    observed_at: "2026-08-05T17:12:00Z"
+    revision: example-pack-0.1.0
+    description: The reasoning fixture inspected against the case rubric and expected behaviors.
+dimensions:
+  - name: knowledge_quality
+    score: 1
+    observations:
+      - The answer assigns distinct responsibilities to all components without adding unsupported architecture.
+    evidence_refs:
+      - example.atlas-notes.evidence.evaluation-output
+  - name: reasoning_quality
+    score: 1
+    observations:
+      - Current dependency facts and historical selection rationale use separate claims and statuses.
+    evidence_refs:
+      - example.atlas-notes.evidence.evaluation-output
+  - name: coverage
+    score: 1
+    observations:
+      - The answer covers all four required components and the repository-port rationale.
+    evidence_refs:
+      - example.atlas-notes.evidence.evaluation-output
+  - name: evidence
+    score: 1
+    observations:
+      - Both material claims cite the required source evidence identifiers.
+    evidence_refs:
+      - example.atlas-notes.evidence.evaluation-output
+overall_score: 1
+outcome: pass
+findings: []
+limitations:
+  - This Phase One fixture evaluates a static response and does not measure live retrieval.

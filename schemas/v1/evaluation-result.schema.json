@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/evaluation-result.schema.json",
+  "title": "Evaluation Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "case_id",
+    "case_version",
+    "system_under_test",
+    "knowledge_snapshot",
+    "evaluator",
+    "started_at",
+    "completed_at",
+    "evidence",
+    "dimensions",
+    "overall_score",
+    "outcome",
+    "findings",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "case_id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "case_version": { "type": "string", "minLength": 1 },
+    "system_under_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "configuration_digest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "knowledge_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_id", "pack_version", "snapshot_id"],
+      "properties": {
+        "pack_id": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+        },
+        "pack_version": { "type": "string", "minLength": 1 },
+        "snapshot_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evaluator": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/actor"
+    },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/evidence"
+      }
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "score", "observations", "evidence_refs"],
+        "properties": {
+          "name": {
+            "$ref": "https://knowledge-companion.dev/schemas/v1/evaluation-case.schema.json#/$defs/dimensionName"
+          },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "observations": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 10 }
+          },
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+            }
+          }
+        }
+      }
+    },
+    "overall_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "outcome": { "type": "string", "enum": ["pass", "fail", "inconclusive"] },
+    "findings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 10 }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 5 }
+    },
+    "extensions": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+    }
+  }
+}

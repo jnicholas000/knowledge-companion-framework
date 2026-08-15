@@ -1,0 +1,105 @@
+{
+  "manifest_version": "1.0.0",
+  "fixture_set_version": "1.0.0",
+  "cases": [
+    {
+      "id": "m5.atlas.explain-boundaries",
+      "version": "1.0.0",
+      "digest": "sha256:739d85824573cce338b70e4bc0eb4098582faaf297354b2dc19324d2c0f88cee"
+    },
+    {
+      "id": "m5.atlas.compare-service-adapter",
+      "version": "1.0.0",
+      "digest": "sha256:6d77da022f5682c24407118597afdfe87a9da5742a8de886704f14725d5a02ea"
+    },
+    {
+      "id": "m5.atlas.estimate-export",
+      "version": "1.0.0",
+      "digest": "sha256:5e5c693ad36bd7455c88532c8f6794d8bf10e1864c979e7d61d935cf6ea5968c"
+    },
+    {
+      "id": "m5.lumen.trace-execution",
+      "version": "1.0.0",
+      "digest": "sha256:e5b662aea3d42f54c3133173a0e5d944db4e8e156b0d10f33699357a3bbff637"
+    },
+    {
+      "id": "m5.lumen.debug-weather-hold",
+      "version": "1.0.0",
+      "digest": "sha256:f249e9a4818bbf91ed50a38b86a015e4dc76a3af18aaf96538f84f10b9923198"
+    },
+    {
+      "id": "m5.lumen.plan-instrument-mode",
+      "version": "1.0.0",
+      "digest": "sha256:eccec02ad8e9c630261449faa1298e9a0147d192c0df722aa508543aca7cd79c"
+    }
+  ],
+  "components": [
+    {
+      "id": "m5.component.change-normalization",
+      "version": "1.0.0",
+      "digest": "sha256:1e5422a0353dd1bc1b9db2d89bab44eecd7ebfd7502fdaa85c1bd445efaaad62"
+    },
+    {
+      "id": "m5.component.impact-classification",
+      "version": "1.0.0",
+      "digest": "sha256:17e5f690acb63a704181fa2d7d7ce8876725a44eb140002b14be0521c4c61da2"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "m5.output.atlas.explain.grounded",
+      "case_id": "m5.atlas.explain-boundaries",
+      "output_digest": "sha256:8c574059f2ebcc2385b4bf5c004414dc597e7d75881fb098cca97c4d3f345546"
+    },
+    {
+      "id": "m5.output.atlas.compare.grounded",
+      "case_id": "m5.atlas.compare-service-adapter",
+      "output_digest": "sha256:cfbc4894e8f81c6601c6ee3db77e8ede7fb2290eca8000e90ff1321aaf5ee1b3"
+    },
+    {
+      "id": "m5.output.atlas.estimate.grounded",
+      "case_id": "m5.atlas.estimate-export",
+      "output_digest": "sha256:5849e78a8d2f1ee58ee94837d7c476cc3b9d9d16fa86abc2fda1aaed5e959bc0"
+    },
+    {
+      "id": "m5.output.lumen.trace.grounded",
+      "case_id": "m5.lumen.trace-execution",
+      "output_digest": "sha256:04c2100e60eb3bcbdc831d8a3408efe1bdd6d34b7573b94a4754aa14c8e650a4"
+    },
+    {
+      "id": "m5.output.lumen.debug.grounded",
+      "case_id": "m5.lumen.debug-weather-hold",
+      "output_digest": "sha256:062b76d6ef4836bbfbe3965b5454b4136fb799883d9291af8f6bd370ccc597a8"
+    },
+    {
+      "id": "m5.output.lumen.plan.grounded",
+      "case_id": "m5.lumen.plan-instrument-mode",
+      "output_digest": "sha256:3f4d961a7540d50b8be460a781891591b8323b20b53e23b3a5650270f3975b47"
+    },
+    {
+      "id": "m5.output.atlas.explain.unsupported",
+      "case_id": "m5.atlas.explain-boundaries",
+      "output_digest": "sha256:b63022991c5173c851c91a1c3dfda64d5c8bdebf59cd9c260df2d7f881472c70"
+    },
+    {
+      "id": "m5.output.atlas.compare.missing-evidence",
+      "case_id": "m5.atlas.compare-service-adapter",
+      "output_digest": "sha256:146a8ea393f48fe9c5c685f10423e2609315924aeb8ccf034aa7a096ed0f073f"
+    },
+    {
+      "id": "m5.output.atlas.estimate.suppressed-uncertainty",
+      "case_id": "m5.atlas.estimate-export",
+      "output_digest": "sha256:731709a916a54f1aa5ae46627099519891f09aec1d26f18518d508365484815d"
+    },
+    {
+      "id": "m5.output.lumen.trace.cross-snapshot",
+      "case_id": "m5.lumen.trace-execution",
+      "output_digest": "sha256:b090c518b5e563bd8f0dea49f1e31cb06174c09c0e0b520b153ef48e154c2432"
+    },
+    {
+      "id": "m5.output.lumen.debug.cross-pack",
+      "case_id": "m5.lumen.debug-weather-hold",
+      "output_digest": "sha256:fd1c3662976efd7fe06f30451d28fb17e75073507132491191f00d87a01508b7"
+    }
+  ]
+}

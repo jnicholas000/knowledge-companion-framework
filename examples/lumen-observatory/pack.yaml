@@ -1,0 +1,49 @@
+schema_version: "1.0"
+id: example.lumen-observatory
+name: Lumen Observatory Example Pack
+version: "0.1.0"
+description: >-
+  Fictitious observatory scheduling and safe-execution application used to pressure-test portable
+  Knowledge Companion contracts in a time-windowed, event-driven operational domain.
+framework_compatibility: "^0.1"
+owners:
+  - example.maintainer
+sources:
+  - id: example.lumen-observatory.repository
+    kind: local
+    root: "."
+    description: Original fictional application evidence stored locally with the validation pack.
+content:
+  knowledge:
+    - knowledge/**/*.md
+    - delivery/**/*.md
+  retrieval_requests: []
+  retrieval_results: []
+  impacts: []
+  candidates: []
+  estimates: []
+  evaluation_cases:
+    - evals/**/*.case.yaml
+  evaluation_results: []
+  reasoning_responses: []
+policies:
+  freshness:
+    default_review_interval_days: 180
+    strict_after_review_date: true
+  evidence:
+    require_local_sources_to_exist: true
+extensions:
+  knowledge_kinds: []
+  relationship_types:
+    - name: x-blocked-by
+      description: A Lumen workflow cannot advance while the target knowledge constraint is active.
+      owner: example.maintainer
+  metadata:
+    example.lumen-observatory:
+      purpose: second-pack-portability-validation
+      evidence_scope: original-fictional-local-corpus
+provenance:
+  created_at: "2026-08-06T14:00:00Z"
+  created_by: { id: example.maintainer, type: human }
+  last_modified_at: "2026-08-06T14:00:00Z"
+  last_modified_by: { id: example.maintainer, type: human }

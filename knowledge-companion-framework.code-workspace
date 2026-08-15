@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"yaml.schemas": {
+			"./schemas/v1/pack.schema.json": [
+				"/examples/*/pack.yaml",
+				"/templates/pack.yaml"
+			],
+			"./schemas/v1/retrieval-request.schema.json": "/examples/*/evals/**/*.retrieval-request.yaml",
+			"./schemas/v1/retrieval-result.schema.json": "/examples/*/evals/**/*.retrieval-result.yaml",
+			"./schemas/v1/knowledge-impact.schema.json": [
+				"/examples/*/learning/impacts/**/*.yaml",
+				"/templates/knowledge-impact.yaml"
+			],
+			"./schemas/v1/learning-candidate.schema.json": [
+				"/examples/*/learning/candidates/**/*.yaml",
+				"/templates/learning-candidate.yaml"
+			],
+			"./schemas/v1/estimate.schema.json": [
+				"/examples/*/estimates/**/*.yaml",
+				"/templates/estimate.yaml"
+			],
+			"./schemas/v1/evaluation-case.schema.json": [
+				"/examples/*/evals/**/*.case.yaml",
+				"/templates/evaluation-case.yaml"
+			],
+			"./schemas/v1/evaluation-result.schema.json": "/examples/*/evals/**/*.result.yaml",
+			"./schemas/v1/reasoning-response.schema.json": "/examples/*/evals/**/*.reasoning.yaml"
+		}
+	},
+	"extensions": {
+		"recommendations": [
+			"redhat.vscode-yaml"
+		]
+	}
+}

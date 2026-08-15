@@ -1,0 +1,37 @@
+schema_version: "1.0"
+id: example.authoring-corpus
+name: Authoring Corpus Pack
+version: 0.1.0
+description: Minimal pack used only to replay invalid authoring diagnostics.
+framework_compatibility: ^0.1
+owners: [example.maintainer]
+sources:
+  - id: example.authoring-corpus.repository
+    kind: local
+    root: .
+    description: Local checked-in authoring corpus evidence.
+content:
+  knowledge: [knowledge/*.md]
+  retrieval_requests: []
+  retrieval_results: []
+  impacts: []
+  candidates: []
+  estimates: []
+  evaluation_cases: [evals/*.case.yaml]
+  evaluation_results: []
+  reasoning_responses: []
+policies:
+  freshness:
+    default_review_interval_days: 180
+    strict_after_review_date: true
+  evidence:
+    require_local_sources_to_exist: true
+extensions:
+  knowledge_kinds: []
+  relationship_types: []
+  metadata: {}
+provenance:
+  created_at: "2026-08-07T12:00:00Z"
+  created_by: { id: example.maintainer, type: human }
+  last_modified_at: "2026-08-07T12:00:00Z"
+  last_modified_by: { id: example.maintainer, type: human }

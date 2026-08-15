@@ -1,0 +1,51 @@
+schema_version: "1.0"
+id: example.atlas-notes
+name: Atlas Notes Example Pack
+version: "0.1.0"
+description: >-
+  Fictitious local note application used to demonstrate portable Knowledge Companion contracts.
+framework_compatibility: "^0.1"
+owners:
+  - example.maintainer
+sources:
+  - id: example.atlas-notes.repository
+    kind: local
+    root: "."
+    description: Local fictional repository evidence stored with the conformance pack.
+content:
+  knowledge:
+    - knowledge/**/*.md
+    - delivery/**/*.md
+  retrieval_requests:
+    - evals/**/*.retrieval-request.yaml
+  retrieval_results:
+    - evals/**/*.retrieval-result.yaml
+  impacts:
+    - learning/impacts/**/*.yaml
+  candidates:
+    - learning/candidates/**/*.yaml
+  estimates:
+    - estimates/**/*.yaml
+  evaluation_cases:
+    - evals/**/*.case.yaml
+  evaluation_results:
+    - evals/**/*.result.yaml
+  reasoning_responses:
+    - evals/**/*.reasoning.yaml
+policies:
+  freshness:
+    default_review_interval_days: 180
+    strict_after_review_date: true
+  evidence:
+    require_local_sources_to_exist: true
+extensions:
+  knowledge_kinds: []
+  relationship_types: []
+  metadata:
+    example.atlas-notes:
+      purpose: conformance-example
+provenance:
+  created_at: "2026-08-05T13:45:00Z"
+  created_by: { id: example.maintainer, type: human }
+  last_modified_at: "2026-08-05T13:45:00Z"
+  last_modified_by: { id: example.maintainer, type: human }

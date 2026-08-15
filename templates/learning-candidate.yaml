@@ -1,0 +1,39 @@
+schema_version: "1.0"
+id: "{{pack-id}}.candidate.{{change-slug}}"
+impact_id: "{{pack-id}}.impact.{{change-slug}}"
+target:
+  operation: update
+  record_id: "{{pack-id}}.{{kind}}.{{slug}}"
+  expected_revision: "{{target revision reviewed by the proposer}}"
+classification:
+  type: fact_changed
+  review_requirement: mechanical
+  reason: "{{what changed and why this record needs a candidate update}}"
+confidence: high
+evidence:
+  - id: "{{pack-id}}.evidence.{{change-slug}}"
+    source_id: "{{source-id declared in pack.yaml}}"
+    kind: commit
+    locator: "{{commit or change locator}}"
+    observed_at: "{{ISO-8601 timestamp}}"
+    revision: "{{head revision}}"
+    description: "{{source evidence supporting this proposed update}}"
+proposed_changes:
+  - field: claims
+    before: "{{old value or concise representation}}"
+    after: "{{proposed value or concise representation}}"
+    rationale: "{{why this exact field-level change follows from the evidence}}"
+    evidence_refs:
+      - "{{pack-id}}.evidence.{{change-slug}}"
+state: proposed
+review_history: []
+provenance:
+  created_at: "{{ISO-8601 timestamp}}"
+  created_by: { id: "{{actor-id}}", type: human }
+  last_modified_at: "{{ISO-8601 timestamp}}"
+  last_modified_by: { id: "{{actor-id}}", type: human }
+
+# Add one review_history entry per valid transition. Every entry records an `authorization` block
+# naming the policy and actor that verified the reviewer could make that transition. `deferred`
+# records a rationale and may return only to `triaged` or move to `rejected`; `applied` also requires
+# an `application` block.

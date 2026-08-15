@@ -1,0 +1,986 @@
+{
+  "fixture_set_version": "1.0.0",
+  "review_state": "independently_reviewed",
+  "review_scope": "Static reasoning truth copied or conservatively restated from accepted fixed-snapshot records; no live provider is evaluated.",
+  "cases": [
+    {
+      "fixture_version": "1.0.0",
+      "result_version": "1.0.0",
+      "id": "m5.atlas.explain-boundaries",
+      "version": "1.0.0",
+      "title": "Explain Atlas Notes boundaries",
+      "input": {
+        "query": "Explain the Atlas Notes architecture and why persistence is behind a port.",
+        "mode": "explain",
+        "audience": "new contributor",
+        "constraints": ["Separate current dependencies from historical rationale."]
+      },
+      "pack": {
+        "id": "example.atlas-notes",
+        "version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82"
+      },
+      "context_record_ids": [
+        "example.atlas-notes.architecture.boundaries",
+        "example.atlas-notes.decision.repository-port"
+      ],
+      "truth": {
+        "expected_facts": [
+          {
+            "id": "atlas.explain.application-boundary",
+            "statement": "The command parser delegates validated application behavior to NoteApplicationService.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "id": "atlas.explain.repository-dependency",
+            "statement": "NoteApplicationService depends on the NoteRepository port rather than the JSON adapter.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "id": "atlas.explain.port-rationale",
+            "statement": "The added interface is supported by the ability to test use cases without disk I/O.",
+            "evidence_ids": ["example.atlas-notes.evidence.repository-decision"]
+          }
+        ],
+        "acceptable_uncertainty": [
+          {
+            "id": "atlas.explain.language-unknown",
+            "statement": "The accepted records do not identify a programming language or concrete test framework."
+          }
+        ],
+        "prohibited_facts": [
+          {
+            "id": "atlas.explain.parser-persists",
+            "statement": "The command parser directly accesses the JSON persistence adapter."
+          },
+          {
+            "id": "atlas.explain.vector-store",
+            "statement": "Atlas Notes currently persists notes in a vector store."
+          }
+        ]
+      },
+      "rubric": {
+        "dimensions": [
+          {
+            "name": "knowledge_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "All accepted component and decision facts are represented without unsupported claims.",
+            "checks": ["expected_fact_coverage", "supported_claims"]
+          },
+          {
+            "name": "reasoning_quality",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "Current dependency facts, historical rationale, uncertainty, and prohibitions remain distinct.",
+            "checks": ["supported_claims", "uncertainty_preserved", "prohibited_behavior_absent"]
+          },
+          {
+            "name": "evidence",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "Every required fact cites its exact source-backed evidence identifier.",
+            "checks": ["required_evidence", "supported_claims"]
+          },
+          {
+            "name": "coverage",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The explanation covers the parser, service, port, adapter, and rationale.",
+            "checks": ["expected_fact_coverage", "prohibited_behavior_absent"]
+          }
+        ],
+        "pass_threshold": 0.8
+      },
+      "accountability": {
+        "output_producer": "fixture.m5.static-output-author",
+        "truth_reviewer": "fixture.m5.atlas-truth-reviewer",
+        "review_state": "independently_reviewed",
+        "reviewed_at": "2026-08-08T05:50:15Z"
+      }
+    },
+    {
+      "fixture_version": "1.0.0",
+      "result_version": "1.0.0",
+      "id": "m5.atlas.compare-service-adapter",
+      "version": "1.0.0",
+      "title": "Compare the Atlas service and JSON adapter",
+      "input": {
+        "query": "Compare NoteApplicationService with JsonFileNoteRepository.",
+        "mode": "compare",
+        "audience": "maintainer",
+        "constraints": ["Compare responsibilities and dependency direction only."]
+      },
+      "pack": {
+        "id": "example.atlas-notes",
+        "version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82"
+      },
+      "context_record_ids": [
+        "example.atlas-notes.architecture.boundaries",
+        "example.atlas-notes.decision.repository-port"
+      ],
+      "truth": {
+        "expected_facts": [
+          {
+            "id": "atlas.compare.service",
+            "statement": "NoteApplicationService owns use-case validation and orchestration.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "id": "atlas.compare.adapter",
+            "statement": "JsonFileNoteRepository implements the NoteRepository port and owns file serialization.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "id": "atlas.compare.direction",
+            "statement": "The application service depends on NoteRepository while JSON serialization remains an adapter detail.",
+            "evidence_ids": [
+              "example.atlas-notes.evidence.system-overview",
+              "example.atlas-notes.evidence.repository-decision"
+            ]
+          }
+        ],
+        "acceptable_uncertainty": [
+          {
+            "id": "atlas.compare.implementation-unknown",
+            "statement": "The records do not establish the implementation language or test framework."
+          }
+        ],
+        "prohibited_facts": [
+          {
+            "id": "atlas.compare.interchangeable",
+            "statement": "NoteApplicationService and JsonFileNoteRepository are interchangeable components."
+          },
+          {
+            "id": "atlas.compare.parser-persists",
+            "statement": "The parser persists notes directly through JsonFileNoteRepository."
+          }
+        ]
+      },
+      "rubric": {
+        "dimensions": [
+          {
+            "name": "knowledge_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The comparison represents both component responsibilities and their dependency boundary.",
+            "checks": ["expected_fact_coverage", "supported_claims"]
+          },
+          {
+            "name": "reasoning_quality",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "The comparison does not collapse distinct roles or suppress stated uncertainty.",
+            "checks": ["supported_claims", "uncertainty_preserved", "prohibited_behavior_absent"]
+          },
+          {
+            "name": "evidence",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "Service, adapter, and dependency claims resolve to required evidence.",
+            "checks": ["required_evidence", "supported_claims"]
+          },
+          {
+            "name": "coverage",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The comparison covers responsibilities, port direction, and adapter detail.",
+            "checks": ["expected_fact_coverage", "prohibited_behavior_absent"]
+          }
+        ],
+        "pass_threshold": 0.8
+      },
+      "accountability": {
+        "output_producer": "fixture.m5.static-output-author",
+        "truth_reviewer": "fixture.m5.atlas-truth-reviewer",
+        "review_state": "independently_reviewed",
+        "reviewed_at": "2026-08-08T05:50:15Z"
+      }
+    },
+    {
+      "fixture_version": "1.0.0",
+      "result_version": "1.0.0",
+      "id": "m5.atlas.estimate-export",
+      "version": "1.0.0",
+      "title": "Evaluate the Atlas read-only export estimate",
+      "input": {
+        "query": "Estimate the existing bounded read-only NDJSON export slice.",
+        "mode": "estimate",
+        "audience": "delivery reviewer",
+        "constraints": ["Preserve the three-point range, uncertainty, drivers, and exclusions."]
+      },
+      "pack": {
+        "id": "example.atlas-notes",
+        "version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82"
+      },
+      "context_record_ids": ["example.atlas-notes.estimate.export-command"],
+      "truth": {
+        "expected_facts": [
+          {
+            "id": "atlas.estimate.range",
+            "statement": "The aggregate estimate is 1/2/5 person_days with medium confidence.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          },
+          {
+            "id": "atlas.estimate.work",
+            "statement": "The estimate contains two bounded work items spanning repository read behavior and command presentation.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          },
+          {
+            "id": "atlas.estimate.scope",
+            "statement": "Remote destinations, synchronization, import, filtering, compression, and schema migration are excluded.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          }
+        ],
+        "acceptable_uncertainty": [
+          {
+            "id": "atlas.estimate.escaping-unknown",
+            "statement": "Escaping coverage for newline and Unicode note text and the current test harness are not established."
+          }
+        ],
+        "prohibited_facts": [
+          {
+            "id": "atlas.estimate.single-point",
+            "statement": "The export will take exactly two person-days."
+          },
+          {
+            "id": "atlas.estimate.remote-scope",
+            "statement": "The estimate includes remote synchronization and import."
+          }
+        ]
+      },
+      "rubric": {
+        "dimensions": [
+          {
+            "name": "knowledge_quality",
+            "weight": 0.45,
+            "critical": false,
+            "criteria": "The estimate retains the checked-in range, work, and exclusions.",
+            "checks": ["expected_fact_coverage", "supported_claims"]
+          },
+          {
+            "name": "reasoning_quality",
+            "weight": 0.05,
+            "critical": true,
+            "criteria": "The estimate preserves uncertainty and rejects unsupported precision or scope.",
+            "checks": ["supported_claims", "uncertainty_preserved", "prohibited_behavior_absent"]
+          },
+          {
+            "name": "evidence",
+            "weight": 0.05,
+            "critical": true,
+            "criteria": "Estimate statements retain the declared completed-work analogue evidence.",
+            "checks": ["required_evidence", "supported_claims"]
+          },
+          {
+            "name": "estimation_quality",
+            "weight": 0.45,
+            "critical": false,
+            "criteria": "Range, confidence, uncertainty, drivers, work, and exclusions remain visible.",
+            "checks": ["expected_fact_coverage", "prohibited_behavior_absent"]
+          }
+        ],
+        "pass_threshold": 0.8
+      },
+      "accountability": {
+        "output_producer": "fixture.m5.static-output-author",
+        "truth_reviewer": "fixture.m5.atlas-truth-reviewer",
+        "review_state": "independently_reviewed",
+        "reviewed_at": "2026-08-08T05:50:15Z"
+      }
+    },
+    {
+      "fixture_version": "1.0.0",
+      "result_version": "1.0.0",
+      "id": "m5.lumen.trace-execution",
+      "version": "1.0.0",
+      "title": "Trace Lumen submission through execution",
+      "input": {
+        "query": "Trace a normal Lumen request from submission to completed execution.",
+        "mode": "trace",
+        "audience": "new contributor",
+        "constraints": ["Keep eligibility, selection, reservation, and external execution distinct."]
+      },
+      "pack": {
+        "id": "example.lumen-observatory",
+        "version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd"
+      },
+      "context_record_ids": [
+        "example.lumen-observatory.domain.observation-lifecycle",
+        "example.lumen-observatory.architecture.event-execution",
+        "example.lumen-observatory.code-tour.observation-execution"
+      ],
+      "truth": {
+        "expected_facts": [
+          {
+            "id": "lumen.trace.lifecycle",
+            "statement": "A normal observation request progresses from submitted through eligible, reserved, and executing to completed or failed.",
+            "evidence_ids": ["example.lumen-observatory.evidence.domain-model"]
+          },
+          {
+            "id": "lumen.trace.components",
+            "statement": "The normal flow crosses Request API, Eligibility Projector, Scheduler, Reservation Ledger, and Execution Coordinator in that order.",
+            "evidence_ids": ["example.lumen-observatory.evidence.event-architecture"]
+          },
+          {
+            "id": "lumen.trace.reservation",
+            "statement": "Queue selection and external execution are separated by the atomic reservation boundary.",
+            "evidence_ids": [
+              "example.lumen-observatory.evidence.event-architecture",
+              "example.lumen-observatory.evidence.domain-model"
+            ]
+          }
+        ],
+        "acceptable_uncertainty": [
+          {
+            "id": "lumen.trace.external-outcome",
+            "statement": "Selection and reservation do not establish that the external command succeeds."
+          }
+        ],
+        "prohibited_facts": [
+          {
+            "id": "lumen.trace.scheduler-sensors",
+            "statement": "The Scheduler directly reads weather sensors and controls telescope hardware."
+          },
+          {
+            "id": "lumen.trace.submit-executes",
+            "statement": "Submitting a request immediately reserves and executes it."
+          }
+        ]
+      },
+      "rubric": {
+        "dimensions": [
+          {
+            "name": "knowledge_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The trace preserves lifecycle, component order, and the reservation boundary.",
+            "checks": ["expected_fact_coverage", "supported_claims"]
+          },
+          {
+            "name": "reasoning_quality",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "The trace separates selection from execution and retains external outcome uncertainty.",
+            "checks": ["supported_claims", "uncertainty_preserved", "prohibited_behavior_absent"]
+          },
+          {
+            "name": "evidence",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "Lifecycle and architecture facts cite the required fixed-snapshot evidence.",
+            "checks": ["required_evidence", "supported_claims"]
+          },
+          {
+            "name": "coverage",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "Submission, eligibility, selection, reservation, execution, and completion are covered.",
+            "checks": ["expected_fact_coverage", "prohibited_behavior_absent"]
+          }
+        ],
+        "pass_threshold": 0.8
+      },
+      "accountability": {
+        "output_producer": "fixture.m5.static-output-author",
+        "truth_reviewer": "fixture.m5.lumen-truth-reviewer",
+        "review_state": "independently_reviewed",
+        "reviewed_at": "2026-08-08T05:50:15Z"
+      }
+    },
+    {
+      "fixture_version": "1.0.0",
+      "result_version": "1.0.0",
+      "id": "m5.lumen.debug-weather-hold",
+      "version": "1.0.0",
+      "title": "Debug a Lumen weather hold",
+      "input": {
+        "query": "Why is one reopened wind gate insufficient to resume a held observation?",
+        "mode": "debug",
+        "audience": "night operator",
+        "constraints": ["Stop when any required timestamp, acknowledgement, or calculation is missing."]
+      },
+      "pack": {
+        "id": "example.lumen-observatory",
+        "version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd"
+      },
+      "context_record_ids": [
+        "example.lumen-observatory.constraint.safety-gates",
+        "example.lumen-observatory.runbook.weather-hold"
+      ],
+      "truth": {
+        "expected_facts": [
+          {
+            "id": "lumen.debug.preconditions",
+            "statement": "Resume requires every gate to be freshly open, control hold acknowledgement, and enough remaining window duration.",
+            "evidence_ids": [
+              "example.lumen-observatory.evidence.safe-hold-operations",
+              "example.lumen-observatory.evidence.acceptance-tests"
+            ]
+          },
+          {
+            "id": "lumen.debug.stop",
+            "statement": "Recovery stops when any gate timestamp, hold acknowledgement, or remaining-window calculation is missing.",
+            "evidence_ids": ["example.lumen-observatory.evidence.safe-hold-operations"]
+          },
+          {
+            "id": "lumen.debug.no-edit",
+            "statement": "Operators may not edit gate state or extend an observing window to force a resume.",
+            "evidence_ids": ["example.lumen-observatory.evidence.safe-hold-operations"]
+          }
+        ],
+        "acceptable_uncertainty": [
+          {
+            "id": "lumen.debug.missing-state",
+            "statement": "A currently open wind gate does not establish the freshness of every gate, hold acknowledgement, or duration fit."
+          }
+        ],
+        "prohibited_facts": [
+          {
+            "id": "lumen.debug.one-gate",
+            "statement": "One reopened wind gate is sufficient authorization to resume."
+          },
+          {
+            "id": "lumen.debug.force-state",
+            "statement": "The operator should edit the gate state or extend the window to force recovery."
+          }
+        ]
+      },
+      "rubric": {
+        "dimensions": [
+          {
+            "name": "knowledge_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The diagnosis retains every recorded recovery precondition and stop boundary.",
+            "checks": ["expected_fact_coverage", "supported_claims"]
+          },
+          {
+            "name": "reasoning_quality",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "One observation is not generalized into authorization and missing state remains explicit.",
+            "checks": ["supported_claims", "uncertainty_preserved", "prohibited_behavior_absent"]
+          },
+          {
+            "name": "evidence",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "Safety, operations, and acceptance evidence support the diagnosis.",
+            "checks": ["required_evidence", "supported_claims"]
+          },
+          {
+            "name": "mission_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The operator receives safe stop, resume, and release boundaries without mutation advice.",
+            "checks": ["expected_fact_coverage", "uncertainty_preserved", "prohibited_behavior_absent"]
+          }
+        ],
+        "pass_threshold": 0.8
+      },
+      "accountability": {
+        "output_producer": "fixture.m5.static-output-author",
+        "truth_reviewer": "fixture.m5.lumen-truth-reviewer",
+        "review_state": "independently_reviewed",
+        "reviewed_at": "2026-08-08T05:50:15Z"
+      }
+    },
+    {
+      "fixture_version": "1.0.0",
+      "result_version": "1.0.0",
+      "id": "m5.lumen.plan-instrument-mode",
+      "version": "1.0.0",
+      "title": "Plan one supported Lumen instrument mode",
+      "input": {
+        "query": "Plan one supported instrument-mode addition.",
+        "mode": "plan",
+        "audience": "instrument specialist and contributor",
+        "constraints": ["Retain the accepted six-step sequence and all stop conditions."]
+      },
+      "pack": {
+        "id": "example.lumen-observatory",
+        "version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd"
+      },
+      "context_record_ids": [
+        "example.lumen-observatory.mission-guide.add-instrument-mode",
+        "example.lumen-observatory.domain.observation-lifecycle",
+        "example.lumen-observatory.architecture.event-execution"
+      ],
+      "truth": {
+        "expected_facts": [
+          {
+            "id": "lumen.plan.approval",
+            "statement": "Adding a supported instrument configuration requires instrument-specialist review and matching eligibility tests.",
+            "evidence_ids": ["example.lumen-observatory.evidence.domain-model"]
+          },
+          {
+            "id": "lumen.plan.boundary",
+            "statement": "Instrument support belongs in the catalog and Eligibility Projector rather than the Scheduler's arbitration logic.",
+            "evidence_ids": [
+              "example.lumen-observatory.evidence.domain-model",
+              "example.lumen-observatory.evidence.event-architecture"
+            ]
+          },
+          {
+            "id": "lumen.plan.sequence",
+            "statement": "The accepted plan has six ordered checks covering approval, catalog entry, window eligibility, safety gates, arbitration and reservation, and the execution tour.",
+            "evidence_ids": ["example.lumen-observatory.evidence.acceptance-tests"]
+          }
+        ],
+        "acceptable_uncertainty": [
+          {
+            "id": "lumen.plan.no-effort-estimate",
+            "statement": "No effort estimate is supported because no comparable completed implementation exists."
+          }
+        ],
+        "prohibited_facts": [
+          {
+            "id": "lumen.plan.scheduler-catalog",
+            "statement": "The Scheduler should own the instrument catalog and device capability checks."
+          },
+          {
+            "id": "lumen.plan.fabricated-dependency",
+            "statement": "Production deployment and a telescope firmware migration are required dependencies."
+          }
+        ]
+      },
+      "rubric": {
+        "dimensions": [
+          {
+            "name": "knowledge_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The plan preserves catalog ownership, approval, and the six ordered checks.",
+            "checks": ["expected_fact_coverage", "supported_claims"]
+          },
+          {
+            "name": "reasoning_quality",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "The plan respects scope and uncertainty without fabricating dependencies.",
+            "checks": ["supported_claims", "uncertainty_preserved", "prohibited_behavior_absent"]
+          },
+          {
+            "name": "evidence",
+            "weight": 0.3,
+            "critical": true,
+            "criteria": "Domain, architecture, and acceptance evidence support the planned steps.",
+            "checks": ["required_evidence", "supported_claims"]
+          },
+          {
+            "name": "mission_quality",
+            "weight": 0.2,
+            "critical": false,
+            "criteria": "The plan retains ordered scope, tests, specialist review, and stop conditions.",
+            "checks": ["expected_fact_coverage", "uncertainty_preserved", "prohibited_behavior_absent"]
+          }
+        ],
+        "pass_threshold": 0.8
+      },
+      "accountability": {
+        "output_producer": "fixture.m5.static-output-author",
+        "truth_reviewer": "fixture.m5.lumen-truth-reviewer",
+        "review_state": "independently_reviewed",
+        "reviewed_at": "2026-08-08T05:50:15Z"
+      }
+    }
+  ],
+  "component_cases": [
+    {
+      "fixture_version": "1.0.0",
+      "id": "m5.component.change-normalization",
+      "version": "1.0.0",
+      "component": "change_normalization",
+      "description": "Two-acquisition normalized change-set behavior remains deterministic.",
+      "expected": {
+        "representation_version": "1.0",
+        "repository_id": "fixture.portable-repository",
+        "base_revision": "base",
+        "target_revision": "target",
+        "observed_at": "2026-08-07T16:00:00.000Z",
+        "completeness": "complete",
+        "changes": [
+          { "path": "docs/added.md", "change_type": "added" },
+          { "path": "src/removed.js", "change_type": "deleted" },
+          { "path": "src/renamed.js", "change_type": "renamed", "old_path": "src/original.js" },
+          { "path": "src/updated.js", "change_type": "modified" }
+        ],
+        "limitations": []
+      }
+    },
+    {
+      "fixture_version": "1.0.0",
+      "id": "m5.component.impact-classification",
+      "version": "1.0.0",
+      "component": "impact_classification",
+      "description": "The reviewed Lumen direct-source deletion assessment remains unchanged.",
+      "expected": {
+        "outcome": "knowledge_update_required",
+        "affected": [
+          {
+            "knowledge_id": "example.lumen-observatory.constraint.safety-gates",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/operations.md"]
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.domain.observation-lifecycle",
+            "review_requirement": "sme_required",
+            "triggering_paths": ["sources/operations.md"]
+          },
+          {
+            "knowledge_id": "example.lumen-observatory.runbook.weather-hold",
+            "review_requirement": "mechanical",
+            "triggering_paths": ["sources/operations.md"]
+          }
+        ],
+        "limitations": []
+      }
+    }
+  ],
+  "controls": [
+    {
+      "kind": "grounded",
+      "expected_outcome": "pass",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.atlas.explain.grounded",
+        "case_id": "m5.atlas.explain-boundaries",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "GROUNDED_EXPLAIN_CONTROL: the parser delegates application behavior; the service depends on the repository port, and the accepted decision supplies the historical testability rationale.",
+        "claims": [
+          {
+            "fact_id": "atlas.explain.application-boundary",
+            "statement": "The command parser delegates validated application behavior to NoteApplicationService.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.explain.repository-dependency",
+            "statement": "NoteApplicationService depends on the NoteRepository port rather than the JSON adapter.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.explain.port-rationale",
+            "statement": "The added interface is supported by the ability to test use cases without disk I/O.",
+            "evidence_ids": ["example.atlas-notes.evidence.repository-decision"]
+          }
+        ],
+        "uncertainty_ids": ["atlas.explain.language-unknown"]
+      }
+    },
+    {
+      "kind": "grounded",
+      "expected_outcome": "pass",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.atlas.compare.grounded",
+        "case_id": "m5.atlas.compare-service-adapter",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "GROUNDED_COMPARE_CONTROL: the service owns use-case orchestration behind the port, while the JSON adapter owns serialization details.",
+        "claims": [
+          {
+            "fact_id": "atlas.compare.service",
+            "statement": "NoteApplicationService owns use-case validation and orchestration.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.compare.adapter",
+            "statement": "JsonFileNoteRepository implements the NoteRepository port and owns file serialization.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.compare.direction",
+            "statement": "The application service depends on NoteRepository while JSON serialization remains an adapter detail.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview", "example.atlas-notes.evidence.repository-decision"]
+          }
+        ],
+        "uncertainty_ids": ["atlas.compare.implementation-unknown"]
+      }
+    },
+    {
+      "kind": "grounded",
+      "expected_outcome": "pass",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.atlas.estimate.grounded",
+        "case_id": "m5.atlas.estimate-export",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "GROUNDED_ESTIMATE_CONTROL: retain the 1/2/5 person-day range, medium confidence, two bounded work items, exclusions, and escaping/test-harness unknowns.",
+        "claims": [
+          {
+            "fact_id": "atlas.estimate.range",
+            "statement": "The aggregate estimate is 1/2/5 person_days with medium confidence.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          },
+          {
+            "fact_id": "atlas.estimate.work",
+            "statement": "The estimate contains two bounded work items spanning repository read behavior and command presentation.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          },
+          {
+            "fact_id": "atlas.estimate.scope",
+            "statement": "Remote destinations, synchronization, import, filtering, compression, and schema migration are excluded.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          }
+        ],
+        "uncertainty_ids": ["atlas.estimate.escaping-unknown"]
+      }
+    },
+    {
+      "kind": "grounded",
+      "expected_outcome": "pass",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.lumen.trace.grounded",
+        "case_id": "m5.lumen.trace-execution",
+        "case_version": "1.0.0",
+        "pack_id": "example.lumen-observatory",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "GROUNDED_TRACE_CONTROL: submission, projection, selection, atomic reservation, and externally coordinated execution remain separate stages.",
+        "claims": [
+          {
+            "fact_id": "lumen.trace.lifecycle",
+            "statement": "A normal observation request progresses from submitted through eligible, reserved, and executing to completed or failed.",
+            "evidence_ids": ["example.lumen-observatory.evidence.domain-model"]
+          },
+          {
+            "fact_id": "lumen.trace.components",
+            "statement": "The normal flow crosses Request API, Eligibility Projector, Scheduler, Reservation Ledger, and Execution Coordinator in that order.",
+            "evidence_ids": ["example.lumen-observatory.evidence.event-architecture"]
+          },
+          {
+            "fact_id": "lumen.trace.reservation",
+            "statement": "Queue selection and external execution are separated by the atomic reservation boundary.",
+            "evidence_ids": ["example.lumen-observatory.evidence.event-architecture", "example.lumen-observatory.evidence.domain-model"]
+          }
+        ],
+        "uncertainty_ids": ["lumen.trace.external-outcome"]
+      }
+    },
+    {
+      "kind": "grounded",
+      "expected_outcome": "pass",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.lumen.debug.grounded",
+        "case_id": "m5.lumen.debug-weather-hold",
+        "case_version": "1.0.0",
+        "pack_id": "example.lumen-observatory",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "GROUNDED_DEBUG_CONTROL: one open wind gate is insufficient; all gates, hold acknowledgement, and duration fit must be verified without editing state.",
+        "claims": [
+          {
+            "fact_id": "lumen.debug.preconditions",
+            "statement": "Resume requires every gate to be freshly open, control hold acknowledgement, and enough remaining window duration.",
+            "evidence_ids": ["example.lumen-observatory.evidence.safe-hold-operations", "example.lumen-observatory.evidence.acceptance-tests"]
+          },
+          {
+            "fact_id": "lumen.debug.stop",
+            "statement": "Recovery stops when any gate timestamp, hold acknowledgement, or remaining-window calculation is missing.",
+            "evidence_ids": ["example.lumen-observatory.evidence.safe-hold-operations"]
+          },
+          {
+            "fact_id": "lumen.debug.no-edit",
+            "statement": "Operators may not edit gate state or extend an observing window to force a resume.",
+            "evidence_ids": ["example.lumen-observatory.evidence.safe-hold-operations"]
+          }
+        ],
+        "uncertainty_ids": ["lumen.debug.missing-state"]
+      }
+    },
+    {
+      "kind": "grounded",
+      "expected_outcome": "pass",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.lumen.plan.grounded",
+        "case_id": "m5.lumen.plan-instrument-mode",
+        "case_version": "1.0.0",
+        "pack_id": "example.lumen-observatory",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "GROUNDED_PLAN_CONTROL: obtain specialist approval, update catalog/projection evidence, execute all six ordered checks, and stop outside the accepted boundary.",
+        "claims": [
+          {
+            "fact_id": "lumen.plan.approval",
+            "statement": "Adding a supported instrument configuration requires instrument-specialist review and matching eligibility tests.",
+            "evidence_ids": ["example.lumen-observatory.evidence.domain-model"]
+          },
+          {
+            "fact_id": "lumen.plan.boundary",
+            "statement": "Instrument support belongs in the catalog and Eligibility Projector rather than the Scheduler's arbitration logic.",
+            "evidence_ids": ["example.lumen-observatory.evidence.domain-model", "example.lumen-observatory.evidence.event-architecture"]
+          },
+          {
+            "fact_id": "lumen.plan.sequence",
+            "statement": "The accepted plan has six ordered checks covering approval, catalog entry, window eligibility, safety gates, arbitration and reservation, and the execution tour.",
+            "evidence_ids": ["example.lumen-observatory.evidence.acceptance-tests"]
+          }
+        ],
+        "uncertainty_ids": ["lumen.plan.no-effort-estimate"]
+      }
+    },
+    {
+      "kind": "unsupported_claim",
+      "expected_outcome": "fail",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.atlas.explain.unsupported",
+        "case_id": "m5.atlas.explain-boundaries",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "FLUENT_UNSUPPORTED_CONTROL: the elegant architecture combines a vector index with the port to optimize semantic search.",
+        "claims": [
+          {
+            "fact_id": "atlas.explain.application-boundary",
+            "statement": "The command parser delegates validated application behavior to NoteApplicationService.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.explain.repository-dependency",
+            "statement": "NoteApplicationService depends on the NoteRepository port rather than the JSON adapter.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.explain.port-rationale",
+            "statement": "The added interface is supported by the ability to test use cases without disk I/O.",
+            "evidence_ids": ["example.atlas-notes.evidence.repository-decision"]
+          },
+          {
+            "fact_id": "atlas.unsupported.semantic-index",
+            "statement": "A vector index optimizes semantic note search behind the repository port.",
+            "evidence_ids": []
+          }
+        ],
+        "uncertainty_ids": ["atlas.explain.language-unknown"]
+      }
+    },
+    {
+      "kind": "missing_evidence",
+      "expected_outcome": "fail",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.atlas.compare.missing-evidence",
+        "case_id": "m5.atlas.compare-service-adapter",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "MISSING_EVIDENCE_CONTROL: the correct dependency conclusion is stated, but its accepted decision evidence is omitted.",
+        "claims": [
+          {
+            "fact_id": "atlas.compare.service",
+            "statement": "NoteApplicationService owns use-case validation and orchestration.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.compare.adapter",
+            "statement": "JsonFileNoteRepository implements the NoteRepository port and owns file serialization.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          },
+          {
+            "fact_id": "atlas.compare.direction",
+            "statement": "The application service depends on NoteRepository while JSON serialization remains an adapter detail.",
+            "evidence_ids": ["example.atlas-notes.evidence.system-overview"]
+          }
+        ],
+        "uncertainty_ids": ["atlas.compare.implementation-unknown"]
+      }
+    },
+    {
+      "kind": "uncertainty_suppression",
+      "expected_outcome": "fail",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.atlas.estimate.suppressed-uncertainty",
+        "case_id": "m5.atlas.estimate-export",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "SUPPRESSED_UNCERTAINTY_CONTROL: the range and scope are stated as fully understood without retaining the escaping or harness unknowns.",
+        "claims": [
+          {
+            "fact_id": "atlas.estimate.range",
+            "statement": "The aggregate estimate is 1/2/5 person_days with medium confidence.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          },
+          {
+            "fact_id": "atlas.estimate.work",
+            "statement": "The estimate contains two bounded work items spanning repository read behavior and command presentation.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          },
+          {
+            "fact_id": "atlas.estimate.scope",
+            "statement": "Remote destinations, synchronization, import, filtering, compression, and schema migration are excluded.",
+            "evidence_ids": ["example.atlas-notes.evidence.export-analogue"]
+          }
+        ],
+        "uncertainty_ids": []
+      }
+    },
+    {
+      "kind": "cross_snapshot_contamination",
+      "expected_outcome": "reject",
+      "expected_error": "evaluation.snapshot_mismatch",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.lumen.trace.cross-snapshot",
+        "case_id": "m5.lumen.trace-execution",
+        "case_version": "1.0.0",
+        "pack_id": "example.lumen-observatory",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:5437dc39ad899bba76890926df6cf7ca36b98961ea5337f30dbb8e6bd1793a82",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "CROSS_SNAPSHOT_CONTROL: a response labeled with the Atlas fixed snapshot must not enter the Lumen result.",
+        "claims": [],
+        "uncertainty_ids": []
+      }
+    },
+    {
+      "kind": "cross_pack_contamination",
+      "expected_outcome": "reject",
+      "expected_error": "evaluation.pack_mismatch",
+      "output": {
+        "artifact_version": "1.0.0",
+        "id": "m5.output.lumen.debug.cross-pack",
+        "case_id": "m5.lumen.debug-weather-hold",
+        "case_version": "1.0.0",
+        "pack_id": "example.atlas-notes",
+        "pack_version": "0.1.0",
+        "snapshot_id": "sha256:2e6e8676ae6ce5e417e401011bb482b92f141d85516d9b800db08d5fbb5735fd",
+        "producer": "fixture.m5.static-output-author",
+        "answer": "CROSS_PACK_CONTROL: Atlas identity must not be accepted for a Lumen weather-hold case.",
+        "claims": [],
+        "uncertainty_ids": []
+      }
+    }
+  ]
+}

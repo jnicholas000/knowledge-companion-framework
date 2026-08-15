@@ -1,0 +1,52 @@
+schema_version: "1.0"
+id: example.atlas-notes.candidate.atomic-write
+impact_id: example.atlas-notes.impact.atomic-write
+target:
+  operation: update
+  record_id: example.atlas-notes.decision.repository-port
+  expected_revision: example-pack-0.1.0
+classification:
+  type: decision_changed
+  review_requirement: interpretive
+  reason: >-
+    A separately accepted persistence decision adds an atomic replacement constraint to the JSON
+    adapter boundary.
+confidence: high
+evidence:
+  - id: example.atlas-notes.evidence.atomic-write-decision
+    source_id: example.atlas-notes.repository
+    kind: decision_record
+    locator: sources/decisions/002-atomic-write.md
+    observed_at: "2026-08-05T15:00:00Z"
+    revision: fictional-atomic-write
+    description: The fictional accepted decision requires temporary-file write and atomic replacement.
+proposed_changes:
+  - field: claims
+    after:
+      statement: The JSON adapter must replace the notes file atomically rather than write it in place.
+      epistemic_status: historical_knowledge
+      confidence: high
+    rationale: >-
+      Adding the accepted persistence guarantee keeps the decision record aligned with the new source
+      decision without changing application-layer responsibilities.
+    evidence_refs:
+      - example.atlas-notes.evidence.atomic-write-decision
+state: triaged
+review_history:
+  - from: proposed
+    to: triaged
+    actor:
+      id: example.reviewer
+      type: human
+    authorization:
+      policy_ref: example.atlas-notes.policy.knowledge-review
+      verified_at: "2026-08-05T15:15:00Z"
+      verified_by: { id: example.maintainer, type: human }
+    at: "2026-08-05T15:15:00Z"
+    rationale: The target, evidence, and change classification are coherent and ready for review.
+    content_digest: sha256:3b1d5a
+provenance:
+  created_at: "2026-08-05T15:05:00Z"
+  created_by: { id: example.maintainer, type: human }
+  last_modified_at: "2026-08-05T15:15:00Z"
+  last_modified_by: { id: example.reviewer, type: human }

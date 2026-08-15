@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/learning-candidate.schema.json",
+  "title": "Learning Candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "impact_id",
+    "target",
+    "classification",
+    "confidence",
+    "evidence",
+    "proposed_changes",
+    "state",
+    "review_history",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "impact_id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation"],
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": ["create", "update", "supersede", "deprecate"]
+        },
+        "record_id": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+        },
+        "proposed_path": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+        },
+        "expected_revision": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "operation": { "const": "create" } },
+            "required": ["operation"]
+          },
+          "then": {
+            "properties": { "proposed_path": true },
+            "required": ["proposed_path"]
+          },
+          "else": {
+            "properties": { "record_id": true, "expected_revision": true },
+            "required": ["record_id", "expected_revision"]
+          }
+        }
+      ]
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "review_requirement", "reason"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "fact_changed",
+            "decision_changed",
+            "relationship_changed",
+            "guidance_changed",
+            "freshness_only",
+            "coverage_gap"
+          ]
+        },
+        "review_requirement": {
+          "type": "string",
+          "enum": ["mechanical", "interpretive", "sme_required"]
+        },
+        "reason": { "type": "string", "minLength": 20 }
+      }
+    },
+    "confidence": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/confidence"
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/evidence"
+      }
+    },
+    "proposed_changes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "after", "rationale", "evidence_refs"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "before": true,
+          "after": true,
+          "rationale": { "type": "string", "minLength": 20 },
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "string",
+      "enum": ["proposed", "triaged", "deferred", "approved", "rejected", "applied"]
+    },
+    "review_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "actor", "authorization", "at", "rationale", "content_digest"],
+        "properties": {
+          "from": {
+            "type": "string",
+            "enum": ["proposed", "triaged", "deferred", "approved"]
+          },
+          "to": {
+            "type": "string",
+            "enum": ["triaged", "deferred", "approved", "rejected", "applied"]
+          },
+          "actor": {
+            "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/actor"
+          },
+          "authorization": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["policy_ref", "verified_at", "verified_by"],
+            "properties": {
+              "policy_ref": { "type": "string", "minLength": 3 },
+              "verified_at": { "type": "string", "format": "date-time" },
+              "verified_by": {
+                "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/actor"
+              }
+            }
+          },
+          "at": { "type": "string", "format": "date-time" },
+          "rationale": { "type": "string", "minLength": 10 },
+          "content_digest": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*:[A-Fa-f0-9]+$"
+          }
+        }
+      }
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "revision", "applied_at", "applied_by"],
+      "properties": {
+        "record_id": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+        },
+        "revision": { "type": "string", "minLength": 1 },
+        "applied_at": { "type": "string", "format": "date-time" },
+        "applied_by": {
+          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/actor"
+        }
+      }
+    },
+    "provenance": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/provenance"
+    },
+    "extensions": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "state": { "const": "applied" } },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": { "application": true },
+        "required": ["application"]
+      }
+    }
+  ]
+}

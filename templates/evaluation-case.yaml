@@ -1,0 +1,37 @@
+schema_version: "1.0"
+id: "{{pack-id}}.evaluation.{{case-slug}}"
+version: "1.0.0"
+title: "{{case title}}"
+description: "{{behavior and quality risk this case is designed to evaluate}}"
+input:
+  query: "{{consumer query or task}}"
+  mode: explain
+  audience: "{{audience}}"
+  constraints: []
+fixture:
+  pack_id: "{{pack-id}}"
+  pack_version: "{{pack version}}"
+  snapshot_id: "{{immutable fixture snapshot}}"
+  record_ids:
+    - "{{pack-id}}.{{kind}}.{{slug}}"
+expectations:
+  required_behaviors:
+    - "{{stable observable semantic behavior, not exact prose}}"
+  prohibited_behaviors:
+    - "{{material error or unsupported behavior that must not occur}}"
+  required_evidence_ids: []
+evaluator_method: hybrid
+rubric:
+  dimensions:
+    - name: reasoning_quality
+      weight: 0.5
+      criteria: "{{how correct reasoning will be recognized}}"
+    - name: evidence
+      weight: 0.5
+      criteria: "{{how evidence completeness and support will be recognized}}"
+  pass_threshold: 0.8
+provenance:
+  created_at: "{{ISO-8601 timestamp}}"
+  created_by: { id: "{{actor-id}}", type: human }
+  last_modified_at: "{{ISO-8601 timestamp}}"
+  last_modified_by: { id: "{{actor-id}}", type: human }

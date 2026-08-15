@@ -1,0 +1,20 @@
+schema_version: "1.0"
+id: example.atlas-notes.retrieval-request.explain-boundaries
+query: Explain the Atlas Notes architecture and why persistence is behind a port.
+knowledge_snapshot:
+  pack_id: example.atlas-notes
+  pack_version: "0.1.0"
+  snapshot_id: example-pack-0.1.0
+filters:
+  statuses:
+    - accepted
+  kinds:
+    - architecture
+    - decision
+  tags: []
+  record_ids: []
+limit: 5
+requested_at: "2026-08-05T17:04:00Z"
+requested_by:
+  id: example.reasoner
+  type: ai

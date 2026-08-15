@@ -1,0 +1,48 @@
+schema_version: "1.0"
+id: "{{pack-id}}.estimate.{{subject-slug}}"
+subject: "{{bounded deliverable being estimated}}"
+completion_evidence:
+  - "{{observable evidence that the deliverable is complete}}"
+knowledge_snapshot:
+  pack_id: "{{pack-id}}"
+  pack_version: "{{pack version}}"
+  snapshot_id: "{{immutable snapshot identifier}}"
+  record_ids: []
+unit: person_days
+method:
+  name: three_point_correlated
+  rationale: "{{how item ranges and shared integration risk are aggregated}}"
+evidence: []
+assumptions:
+  - id: "{{pack-id}}.estimate-assumption.{{slug}}"
+    statement: "{{one material assumption}}"
+    epistemic_status: uncertainty
+    confidence: low
+    evidence_refs: []
+work_items:
+  - id: "{{pack-id}}.work-item.{{slug}}"
+    description: "{{independently estimable unit with a clear completion boundary}}"
+    range: { low: 1, likely: 2, high: 4 }
+    depends_on: []
+    evidence_refs: []
+range: { low: 1, likely: 2, high: 4 }
+confidence: low
+confidence_rationale: "{{scope stability and evidence quality behind this confidence}}"
+primary_drivers:
+  - "{{bounded scope or complexity driver that shapes the range}}"
+unknowns:
+  - "{{material unknown; use an empty array only when evidence supports that no material unknown remains}}"
+comparable_completed_work:
+  - description: "{{completed analogue and why it is comparable}}"
+    evidence_refs:
+      - "{{evidence ID for the completed work}}"
+risks:
+  - description: "{{uncertain event or condition}}"
+    effect: "{{how it changes scope or the range}}"
+    trigger: "{{observable re-estimation trigger}}"
+exclusions:
+  - "{{work intentionally outside this estimate}}"
+likely_variance_factors:
+  - "{{condition likely to move actual effort within or beyond the range}}"
+created_at: "{{ISO-8601 timestamp}}"
+created_by: { id: "{{actor-id}}", type: human }

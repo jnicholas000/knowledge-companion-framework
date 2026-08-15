@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-companion.dev/schemas/v1/knowledge-impact.schema.json",
+  "title": "Knowledge Impact Declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "change",
+    "classification",
+    "rationale",
+    "affected_knowledge_ids",
+    "candidate_ids",
+    "declared_at",
+    "declared_by"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "base_revision", "head_revision", "changed_paths", "observed_at"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "base_revision": { "type": "string", "minLength": 1 },
+        "head_revision": { "type": "string", "minLength": 1 },
+        "changed_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+          }
+        },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "source_url": { "type": "string", "format": "uri" },
+        "limitations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 5 }
+        }
+      }
+    },
+    "classification": {
+      "type": "string",
+      "enum": ["knowledge_update_required", "no_knowledge_change"]
+    },
+    "rationale": { "type": "string", "minLength": 20 },
+    "affected_knowledge_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+      }
+    },
+    "candidate_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/identifier"
+      }
+    },
+    "declared_at": { "type": "string", "format": "date-time" },
+    "declared_by": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/actor"
+    },
+    "extensions": {
+      "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "classification": { "const": "knowledge_update_required" } },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": { "candidate_ids": { "type": "array", "minItems": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "classification": { "const": "no_knowledge_change" } },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "candidate_ids": { "type": "array", "maxItems": 0 },
+          "affected_knowledge_ids": { "type": "array", "maxItems": 0 }
+        }
+      }
+    }
+  ]
+}
