@@ -10,6 +10,7 @@ import {
   loadKnowledgeFile,
   loadStructuredFile
 } from './formats.js';
+import { validatePortablePath } from './interchange.js';
 import { createSchemaValidator, schemaIds } from './schema-catalog.js';
 
 const coreKnowledgeKinds = new Set([
@@ -80,14 +81,147 @@ function relativeDisplay(root, filePath) {
 }
 
 function isSafeRelativePath(value) {
-  if (
-    typeof value !== 'string'
-    || value.length === 0
-    || path.isAbsolute(value)
-    || /^[A-Za-z]:[\\/]/.test(value)
-    || /^[\\/]/.test(value)
-  ) return false;
-  return !value.split(/[\\/]/).includes('..');
+  try {
+    validatePortablePath(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function addPortablePathDiagnostic(result, file, value, instancePath, label) {
+  if (typeof value !== 'string') return;
+  try {
+    validatePortablePath(value, label);
+  } catch (error) {
+    result.errors.push(diagnostic('error', 'path.invalid', file, error.message, instancePath));
+  }
+}
+
+function validateManifestPortablePaths(result, manifest, manifestFile) {
+  const content = manifest !== null && typeof manifest === 'object' && !Array.isArray(manifest)
+    && manifest.content !== null && typeof manifest.content === 'object'
+    && !Array.isArray(manifest.content)
+    ? manifest.content
+    : {};
+  for (const [group, patterns] of Object.entries(content)) {
+    if (!Array.isArray(patterns)) continue;
+    for (const [index, pattern] of patterns.entries()) {
+      addPortablePathDiagnostic(
+        result,
+        manifestFile,
+        pattern,
+        `/content/${group}/${index}`,
+        `${group} content pattern`
+      );
+    }
+  }
+  const sources = Array.isArray(manifest?.sources) ? manifest.sources : [];
+  for (const [index, source] of sources.entries()) {
+    if (source?.kind === 'local' && source.root !== '.') {
+      addPortablePathDiagnostic(
+        result,
+        manifestFile,
+        source.root,
+        `/sources/${index}/root`,
+        'local source root'
+      );
+    }
+  }
+}
+
+function validateRecordPortablePaths(result, manifest, records) {
+  const localSourceIds = new Set(
+    manifest.sources.filter((source) => source.kind === 'local').map((source) => source.id)
+  );
+
+  for (const record of [...records.values()].flat()) {
+    const data = record.data;
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) continue;
+
+    for (const [index, evidence] of (Array.isArray(data.evidence) ? data.evidence : []).entries()) {
+      if (
+        evidence !== null
+        && typeof evidence === 'object'
+        && localSourceIds.has(evidence.source_id)
+        && localEvidenceKinds.has(evidence.kind)
+      ) {
+        addPortablePathDiagnostic(
+          result,
+          record.file,
+          evidence.locator,
+          `/evidence/${index}/locator`,
+          'local evidence locator'
+        );
+      }
+    }
+  }
+
+  for (const record of records.get('knowledge')) {
+    const data = record.data;
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) continue;
+
+    for (const [index, value] of (Array.isArray(data.applies_to) ? data.applies_to : []).entries()) {
+      addPortablePathDiagnostic(result, record.file, value, `/applies_to/${index}`, 'applies_to path');
+    }
+    for (const [index, trigger] of (
+      Array.isArray(data.freshness?.invalidation_triggers)
+        ? data.freshness.invalidation_triggers
+        : []
+    ).entries()) {
+      if (trigger?.type === 'path_changed') {
+        addPortablePathDiagnostic(
+          result,
+          record.file,
+          trigger.value,
+          `/freshness/invalidation_triggers/${index}/value`,
+          'path_changed trigger'
+        );
+      }
+    }
+    for (const [index, relationship] of (
+      Array.isArray(data.relationships) ? data.relationships : []
+    ).entries()) {
+      if (
+        ['code', 'external'].includes(relationship?.target_kind)
+        && typeof relationship.target === 'string'
+        && !relationship.target.includes('://')
+      ) {
+        addPortablePathDiagnostic(
+          result,
+          record.file,
+          relationship.target,
+          `/relationships/${index}/target`,
+          'relationship path'
+        );
+      }
+    }
+  }
+
+  for (const record of records.get('impacts')) {
+    for (const [index, changedPath] of (
+      Array.isArray(record.data?.change?.changed_paths) ? record.data.change.changed_paths : []
+    ).entries()) {
+      addPortablePathDiagnostic(
+        result,
+        record.file,
+        changedPath,
+        `/change/changed_paths/${index}`,
+        'impact changed path'
+      );
+    }
+  }
+  for (const record of records.get('candidates')) {
+    if (record.data?.target?.proposed_path !== undefined) {
+      addPortablePathDiagnostic(
+        result,
+        record.file,
+        record.data.target.proposed_path,
+        '/target/proposed_path',
+        'candidate proposed path'
+      );
+    }
+  }
 }
 
 function uniqueValues(items, selector) {
@@ -450,6 +584,7 @@ async function validateLocalEvidence(result, root, manifest, records) {
 }
 
 function validateIntegrity(result, manifest, records, now, strictFreshness) {
+  validateRecordPortablePaths(result, manifest, records);
   const validRecords = (group) => records.get(group).filter((record) => record.schemaValid);
   const allRecords = [...records.values()].flat().filter((record) => record.schemaValid);
   const durableRecords = allRecords.filter((record) => record.data?.id);
@@ -498,6 +633,26 @@ function validateIntegrity(result, manifest, records, now, strictFreshness) {
     result.errors.push(
       diagnostic('error', 'identity.source_duplicate', 'pack.yaml', `source ID ${duplicate} is duplicated`)
     );
+  }
+
+  for (const record of knowledge) {
+    for (const [index, trigger] of (record.data.freshness?.invalidation_triggers ?? []).entries()) {
+      if (
+        trigger?.type === 'path_changed'
+        && trigger.repository_id !== undefined
+        && !sourceIds.has(trigger.repository_id)
+      ) {
+        result.errors.push(
+          diagnostic(
+            'error',
+            'reference.source_missing',
+            record.file,
+            `freshness trigger references unknown source ${trigger.repository_id}`,
+            `/freshness/invalidation_triggers/${index}/repository_id`
+          )
+        );
+      }
+    }
   }
 
   if (!supportsFramework(manifest.framework_compatibility)) {
@@ -1089,9 +1244,12 @@ export async function validatePack(packPath, options = {}) {
     return result;
   }
 
+  const manifestFile = relativeDisplay(root, manifestPath);
   const validateManifest = ajv.getSchema(schemaIds.pack);
-  if (!validateManifest(manifest)) {
-    addSchemaDiagnostics(result, relativeDisplay(root, manifestPath), validateManifest.errors);
+  const manifestValid = validateManifest(manifest);
+  validateManifestPortablePaths(result, manifest, manifestFile);
+  if (!manifestValid) {
+    addSchemaDiagnostics(result, manifestFile, validateManifest.errors);
     return result;
   }
 

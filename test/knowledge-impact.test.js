@@ -85,12 +85,24 @@ function deepFreeze(value) {
 }
 
 function snapshotWithMutation(packId, relativePath, transform) {
+  return snapshotWithMutations(packId, [{ relativePath, transform }]);
+}
+
+function snapshotWithMutations(packId, mutations) {
   const original = snapshots.get(packId);
   const verified = verifySnapshotExport(original);
-  const files = [...verified.files].map(([filePath, bytes]) => ({
-    path: filePath,
-    bytes: filePath === relativePath ? transform(bytes.toString('utf8')) : bytes
-  }));
+  const files = [...verified.files].map(([filePath, bytes]) => {
+    const fileMutations = mutations.filter((mutation) => mutation.relativePath === filePath);
+    return {
+      path: filePath,
+      bytes: fileMutations.length === 0
+        ? bytes
+        : fileMutations.reduce(
+          (source, mutation) => mutation.transform(source),
+          bytes.toString('utf8')
+        )
+    };
+  });
   return createSnapshotExport({
     files,
     repositoryRevision: original.manifest.repository_revision ?? undefined
@@ -467,5 +479,195 @@ test('duplicated equivalent evidence locators do not change the affected declara
   assert.deepEqual(
     classify(caseFixture, { snapshot_export: duplicated }).affected,
     classify(caseFixture).affected
+  );
+});
+
+test('dependency_changed remains non-path-matching and reports the deterministic authoring limit', () => {
+  const caseFixture = structuredClone(selectCase('lumen.complete-no-op'));
+  caseFixture.change_set = {
+    ...caseFixture.change_set,
+    repository_id: 'fixture.telescope-control-repository',
+    base_revision: 'dependency-base',
+    target_revision: 'dependency-target',
+    changes: [{ path: 'src/control/client.js', change_type: 'modified' }]
+  };
+
+  const result = classify(caseFixture);
+  assert.equal(result.outcome, 'no_knowledge_change');
+  assert.deepEqual(result.affected, []);
+  assert.match(result.rationale, /dependency_changed trigger\(s\) remain freshness metadata/i);
+  assert.match(result.rationale, /not path-matched/i);
+
+  const partial = structuredClone(caseFixture.change_set);
+  partial.completeness = 'partial';
+  partial.limitations = ['one dependency change page was unavailable'];
+  const partialResult = classify(caseFixture, { change_set: partial });
+  assert.equal(partialResult.outcome, 'indeterminate');
+  assert.deepEqual(partialResult.affected, []);
+  assert.deepEqual(partialResult.limitations, ['one dependency change page was unavailable']);
+});
+
+test('repository-bound cross-repository paths reject mismatched change sets and preserve one-hop propagation', () => {
+  const caseFixture = structuredClone(selectCase('lumen.complete-no-op'));
+  caseFixture.change_set = {
+    ...caseFixture.change_set,
+    repository_id: 'fixture.telescope-control-repository',
+    base_revision: 'dependency-base',
+    target_revision: 'dependency-target',
+    changes: [{ path: 'src/control/client.js', change_type: 'modified' }]
+  };
+  const explicitPathSnapshot = snapshotWithMutations(
+    caseFixture.pack_id,
+    [
+      {
+        relativePath: 'pack.yaml',
+        transform: (source) => source.replace(
+          'content:\n',
+          '  - id: fixture.telescope-control-repository\n    kind: git\n    uri: https://example.invalid/telescope-control.git\n    description: Fictional dependency repository used for repository-binding regression coverage.\ncontent:\n'
+        )
+      },
+      {
+        relativePath: 'knowledge/event-driven-execution.md',
+        transform: (source) => source.replace(
+          '    - type: dependency_changed\n',
+          '    - type: path_changed\n      value: src/control/**/*.js\n      repository_id: fixture.telescope-control-repository\n      description: Changes inside the caller-bound dependency repository require architecture review.\n    - type: dependency_changed\n'
+        )
+      }
+    ]
+  );
+
+  const result = classify(caseFixture, { snapshot_export: explicitPathSnapshot });
+  assert.equal(result.outcome, 'knowledge_update_required');
+  assert.deepEqual(
+    result.affected.map((item) => item.knowledge_id),
+    [
+      'example.lumen-observatory.architecture.event-execution',
+      'example.lumen-observatory.constraint.safety-gates',
+      'example.lumen-observatory.domain.observation-lifecycle'
+    ]
+  );
+  const direct = result.affected[0];
+  assert.ok(direct.basis.some((item) =>
+    item.type === 'freshness_path'
+    && item.locator === 'src/control/**/*.js'
+    && item.match === 'glob'
+  ));
+  assert.equal(direct.review_requirement, 'interpretive');
+  assert.equal(result.affected[1].review_requirement, 'sme_required');
+  assert.equal(result.affected[2].review_requirement, 'interpretive');
+  assert.match(result.rationale, /dependency_changed trigger\(s\) remain freshness metadata/i);
+
+  const wrongRepository = structuredClone(caseFixture.change_set);
+  wrongRepository.repository_id = 'fixture.unrelated-repository';
+  const wrongResult = classify(caseFixture, {
+    change_set: wrongRepository,
+    snapshot_export: explicitPathSnapshot
+  });
+  assert.equal(wrongResult.outcome, 'no_knowledge_change');
+  assert.deepEqual(wrongResult.affected, []);
+  assert.match(wrongResult.rationale, /repository-bound source matching is active/i);
+  assert.doesNotMatch(wrongResult.rationale, /declared source matching repository_id/i);
+
+  const collidingRepository = structuredClone(caseFixture.change_set);
+  collidingRepository.repository_id = 'fixture.unrelated-repository';
+  collidingRepository.changes = [{ path: 'sources/architecture.md', change_type: 'modified' }];
+  const collisionResult = classify(caseFixture, {
+    change_set: collidingRepository,
+    snapshot_export: explicitPathSnapshot
+  });
+  assert.equal(collisionResult.outcome, 'no_knowledge_change');
+  assert.deepEqual(collisionResult.affected, []);
+
+  const localRepository = structuredClone(collidingRepository);
+  localRepository.repository_id = 'example.lumen-observatory.repository';
+  const localResult = classify(caseFixture, {
+    change_set: localRepository,
+    snapshot_export: explicitPathSnapshot
+  });
+  assert.equal(localResult.outcome, 'knowledge_update_required');
+  assert.ok(localResult.affected.some((item) =>
+    item.knowledge_id === 'example.lumen-observatory.architecture.event-execution'
+  ));
+});
+
+test('repository-bound mode fails closed for ambiguous unqualified paths across multiple local sources', () => {
+  const caseFixture = structuredClone(selectCase('lumen.complete-no-op'));
+  caseFixture.change_set = {
+    ...caseFixture.change_set,
+    repository_id: 'fixture.lumen-secondary-local',
+    changes: [{ path: 'sources/architecture.md', change_type: 'modified' }]
+  };
+  const multiLocalSnapshot = snapshotWithMutations(
+    caseFixture.pack_id,
+    [
+      {
+        relativePath: 'pack.yaml',
+        transform: (source) => source.replace(
+          'content:\n',
+          '  - id: fixture.lumen-secondary-local\n    kind: local\n    root: "."\n    description: Fictional second local source used for collision isolation coverage.\ncontent:\n'
+        )
+      },
+      {
+        relativePath: 'knowledge/event-driven-execution.md',
+        transform: (source) => source.replace(
+          '    - type: dependency_changed\n',
+          '    - type: path_changed\n      value: sources/secondary-control.md\n      repository_id: fixture.lumen-secondary-local\n      description: A source-qualified local trigger activates repository-bound matching.\n    - type: dependency_changed\n'
+        )
+      }
+    ]
+  );
+
+  const secondaryCollision = classify(caseFixture, { snapshot_export: multiLocalSnapshot });
+  assert.equal(secondaryCollision.outcome, 'no_knowledge_change');
+  assert.deepEqual(secondaryCollision.affected, []);
+
+  const primaryChange = structuredClone(caseFixture.change_set);
+  primaryChange.repository_id = 'example.lumen-observatory.repository';
+  const primaryResult = classify(caseFixture, {
+    change_set: primaryChange,
+    snapshot_export: multiLocalSnapshot
+  });
+  assert.equal(primaryResult.outcome, 'knowledge_update_required');
+  assert.ok(primaryResult.affected.some((item) =>
+    item.knowledge_id === 'example.lumen-observatory.architecture.event-execution'
+  ));
+  const direct = primaryResult.affected.find((item) =>
+    item.knowledge_id === 'example.lumen-observatory.architecture.event-execution'
+  );
+  assert.ok(direct.basis.some((item) =>
+    item.type === 'evidence_locator'
+    && item.locator === 'sources/architecture.md'
+  ));
+  assert.ok(direct.basis.every((item) => item.type !== 'applies_to'));
+});
+
+test('ordinary unbound local matching remains available without repository-bound triggers', () => {
+  const caseFixture = structuredClone(selectCase('lumen.complete-no-op'));
+  caseFixture.change_set = {
+    ...caseFixture.change_set,
+    repository_id: 'fixture.ordinary-local-acquisition',
+    changes: [{ path: 'sources/architecture.md', change_type: 'modified' }]
+  };
+  const result = classify(caseFixture);
+  assert.equal(result.outcome, 'knowledge_update_required');
+  assert.ok(result.affected.some((item) =>
+    item.knowledge_id === 'example.lumen-observatory.architecture.event-execution'
+  ));
+  assert.doesNotMatch(result.rationale, /repository-bound source matching is active/i);
+});
+
+test('repository-bound paths fail closed when the source registry does not declare the binding', () => {
+  const caseFixture = structuredClone(selectCase('lumen.complete-no-op'));
+  const undeclared = snapshotWithMutation(
+    caseFixture.pack_id,
+    'knowledge/event-driven-execution.md',
+    (source) => source.replace(
+      '    - type: dependency_changed\n',
+      '    - type: path_changed\n      value: src/control/**/*.js\n      repository_id: fixture.undeclared-repository\n      description: Undeclared dependency binding must fail closed before path classification.\n    - type: dependency_changed\n'
+    )
+  );
+  assert.throws(
+    () => classify(caseFixture, { snapshot_export: undeclared }),
+    expectCode('impact.repository_source_missing')
   );
 });

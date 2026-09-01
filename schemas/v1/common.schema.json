@@ -18,9 +18,10 @@
       "pattern": "^x-[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "safeRelativePath": {
+      "description": "NFC-normalized forward-slash relative path or glob without empty, dot, parent, or trailing-slash segments.",
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$"
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*//)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*\\/$).+$"
     },
     "extensions": {
       "type": "object",
@@ -177,6 +178,7 @@
       }
     },
     "invalidationTrigger": {
+      "description": "Structured freshness metadata. The Phase Two path classifier matches only path_changed; dependency_changed, event, and manual require separately defined event/source semantics. Cross-repository path_changed triggers may bind to the normalized change-set repository_id.",
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "value", "description"],
@@ -186,9 +188,24 @@
           "enum": ["path_changed", "dependency_changed", "event", "manual"]
         },
         "value": { "type": "string", "minLength": 1 },
+        "repository_id": { "type": "string", "minLength": 1 },
         "description": { "type": "string", "minLength": 10 },
         "extensions": { "$ref": "#/$defs/extensions" }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "path_changed" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": { "value": { "$ref": "#/$defs/safeRelativePath" } }
+          },
+          "else": {
+            "properties": { "repository_id": false }
+          }
+        }
+      ]
     },
     "freshness": {
       "type": "object",

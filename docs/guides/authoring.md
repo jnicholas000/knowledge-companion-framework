@@ -15,6 +15,50 @@ Use the same loop for every pack and editor:
 
 Use `--json` for tools. Do not parse the human console format.
 
+## Paths, Globs, And Dependency Triggers
+
+Use forward-slash, NFC-normalized repository-relative paths. Do not use absolute paths, drive
+prefixes, backslashes, empty segments, `.` or `..` segments, repeated slashes, or a trailing slash.
+KCF does not normalize path spellings because exact bytes affect interchange identity and impact
+matching. Use `directory/**` for all directory contents or a narrower pattern such as
+`directory/**/*.js`; `directory/` is invalid.
+
+The Phase Two impact classifier path-matches exact/glob `applies_to`, eligible local evidence
+locators, `path_changed` freshness triggers, and eligible code/external relationship paths.
+`dependency_changed`, `event`, and `manual` do not path-match by themselves. A
+`dependency_changed` value is freshness metadata, not a repository path or fuzzy dependency name.
+
+A `path_changed` freshness trigger may include `repository_id`. When present, that value must be the
+exact `id` of a source in the pack manifest, and the classifier matches the trigger only when the
+normalized change set has the same `repository_id`. An undeclared binding fails closed. Leave the
+field absent only for paths in the repository represented by the pack's normal local acquisition
+flow. Do not use an unbound path trigger to represent another repository.
+
+For changes in another repository:
+
+1. Bind the normalized change set to the intended repository and revisions with the required
+   caller-side exact-match preflight.
+2. Declare that repository as a pack source, using the exact normalized repository identity as the
+   source `id`.
+3. Author an explicit `path_changed` path or glob relative to that repository and set
+   `repository_id` to that exact declared source ID.
+4. Verify that a change set with the declared local source ID still matches the pack's ordinary
+   unbound local path surfaces.
+5. Verify that the same path presented under an unrelated or undeclared repository identity
+   produces no match.
+6. Optionally retain `dependency_changed` to state the freshness reason, without expecting it to
+   select records.
+
+The caller preflight establishes that the acquired change set is the intended dependency revision;
+the pack source declaration and trigger-level `repository_id` prevent an identical relative path
+from another repository from selecting the record during classification. When any bound trigger is
+present, source-qualified evidence participates only for its declared source. Unqualified local
+paths participate only when the pack declares exactly one local source and the change set's
+`repository_id` equals that source ID; multiple local sources make those surfaces ambiguous and
+therefore non-matching. Canonical validation rejects a `repository_id` that is not declared in the
+pack source registry. Packs with no bound trigger retain the established unbound local matching
+behavior.
+
 ## Diagnostic Envelope
 
 Every error and warning in the JSON result contains:

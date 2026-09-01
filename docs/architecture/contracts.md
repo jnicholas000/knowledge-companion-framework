@@ -39,6 +39,20 @@ asserts another; semantic review remains necessary because schemas cannot prove 
 All schemas use stable `$id` URLs. Loading those URLs over the network is not required; validators
 should register the local schema catalog by `$id`.
 
+## Portable Paths And Globs
+
+Repository-relative paths and path patterns use one canonical syntax across schemas, strict pack
+validation, normalized change sets, snapshot interchange, and impact classification. They use
+forward slashes, Unicode NFC normalization, and one or more non-empty segments. They may not be
+absolute or drive-qualified, contain backslashes, `.` or `..` segments, contain repeated slashes,
+or end in `/`. KCF rejects non-canonical spellings instead of normalizing them because path bytes
+participate in snapshot/change identity and exact impact matching.
+
+An exact directory name such as `src/components` is a valid path value but matches only that exact
+changed path. To cover contents, author an explicit glob such as `src/components/**` or
+`src/components/**/*.js`; a trailing slash is not directory syntax. The special local-source root
+`.` remains a manifest root sentinel, not a repository path or path pattern.
+
 ## Identity
 
 Every durable record has a stable, lowercase, dot-separated identifier such as

@@ -149,6 +149,32 @@ test('evidence must name a source declared by the pack', async () => {
   );
 });
 
+test('path_changed repository bindings must name a source declared by the pack', async () => {
+  await withExamplePack(
+    (root) => replaceIn(
+      root,
+      'knowledge/architecture.md',
+      '      value: sources/system-overview.md\n      description: Component or dependency changes can invalidate the architecture description.',
+      '      value: sources/system-overview.md\n      repository_id: example.atlas-notes.unknown-source\n      description: Component or dependency changes can invalidate the architecture description.'
+    ),
+    (result) => {
+      assert.equal(result.valid, false);
+      const diagnostic = result.errors.find((item) =>
+        item.code === 'reference.source_missing'
+        && item.instance_path === '/freshness/invalidation_triggers/0/repository_id'
+      );
+      assert.deepEqual(diagnostic, {
+        severity: 'error',
+        code: 'reference.source_missing',
+        path: 'knowledge/architecture.md',
+        instance_path: '/freshness/invalidation_triggers/0/repository_id',
+        message: 'freshness trigger references unknown source example.atlas-notes.unknown-source',
+        guidance: 'Use a source_id declared in pack.yaml sources, or declare the source there.'
+      });
+    }
+  );
+});
+
 test('schema-invalid records report diagnostics without entering semantic checks', async () => {
   await withExamplePack(
     (root) => replaceIn(
