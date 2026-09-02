@@ -95,17 +95,19 @@ function matchingChanges(pattern, changes) {
   );
 }
 
-function pathSignal({ kind, pattern, changes }) {
+function pathSignal({ kind, pattern, changes, repositoryId }) {
   const matching = matchingChanges(pattern, changes);
   if (matching.length === 0) return null;
+  const signal = {
+    type: kind,
+    locator: pattern,
+    match: hasGlob(pattern) ? 'glob' : 'exact',
+    change_types: sortUnique(matching.map((change) => change.change_type)),
+    paths: sortUnique(matching.flatMap(changedEndpoints))
+  };
+  if (repositoryId !== undefined) signal.repository_id = repositoryId;
   return {
-    signal: {
-      type: kind,
-      locator: pattern,
-      match: hasGlob(pattern) ? 'glob' : 'exact',
-      change_types: sortUnique(matching.map((change) => change.change_type)),
-      paths: sortUnique(matching.flatMap(changedEndpoints))
-    },
+    signal,
     paths: matching.flatMap(changedEndpoints)
   };
 }
@@ -200,6 +202,7 @@ function parseRecords(verified, packManifest, knowledgePaths) {
       if (localSourceIds.has(sourceId) && pathEvidenceKinds.has(evidenceKind)) {
         pathEvidence.push({
           id: evidenceId,
+          source_id: sourceId,
           locator: validatePattern(evidence.locator, `${id} evidence locator`)
         });
       }
@@ -271,7 +274,32 @@ function parseRecords(verified, packManifest, knowledgePaths) {
     if (appliesTo.length === 0) fail('impact.knowledge_invalid', `${id} must declare applies_to`);
     const triggers = requireArray(data.freshness?.invalidation_triggers, 'freshness triggers', id)
       .filter((trigger) => trigger?.type === 'path_changed')
-      .map((trigger) => validatePattern(trigger.value, `${id} freshness path trigger`));
+      .map((trigger) => {
+        const repositoryId = trigger.repository_id === undefined
+          ? undefined
+          : requireNonEmptyString(
+            trigger.repository_id,
+            'impact.knowledge_invalid',
+            `${id} freshness repository ID`
+          );
+        if (repositoryId !== undefined && !sourceIds.has(repositoryId)) {
+          fail(
+            'impact.repository_source_missing',
+            `${id} freshness trigger binds to undeclared source ${repositoryId}`
+          );
+        }
+        return {
+          pattern: validatePattern(trigger.value, `${id} freshness path trigger`),
+          repository_id: repositoryId
+        };
+      });
+    const dependencyTriggers = data.freshness.invalidation_triggers
+      .filter((trigger) => trigger?.type === 'dependency_changed')
+      .map((trigger) => requireNonEmptyString(
+        trigger.value,
+        'impact.knowledge_invalid',
+        `${id} dependency_changed trigger`
+      ));
     const knowledgeAreas = requireArray(data.knowledge_areas, 'knowledge_areas', id)
       .map((area) => requireNonEmptyString(area, 'impact.knowledge_invalid', `${id} knowledge area`));
     if (knowledgeAreas.length === 0) {
@@ -290,6 +318,7 @@ function parseRecords(verified, packManifest, knowledgePaths) {
       claims,
       relationships,
       freshness_paths: triggers,
+      dependency_triggers: dependencyTriggers,
       knowledge_areas: knowledgeAreas
     });
   }
@@ -310,49 +339,69 @@ function parseRecords(verified, packManifest, knowledgePaths) {
       }
     }
   }
-  return records;
+  return { localSourceIds, records };
 }
 
-function directAssessment(record, changes) {
+function directAssessment(record, changes, repositoryId, repositoryBoundMode, localSourceIds) {
   const signals = [];
   const paths = [];
   const matchedEvidenceIds = new Set();
   const exactDirectPaths = new Set();
+  const localRepositoryMatches = !repositoryBoundMode || localSourceIds.has(repositoryId);
+  const unqualifiedLocalPathsMatch = !repositoryBoundMode
+    || (localSourceIds.size === 1 && localSourceIds.has(repositoryId));
 
-  for (const evidence of record.evidence) {
-    const result = pathSignal({ kind: 'evidence_locator', pattern: evidence.locator, changes });
-    if (!result) continue;
-    signals.push(result.signal);
-    paths.push(...result.paths);
-    matchedEvidenceIds.add(evidence.id);
-    if (!hasGlob(evidence.locator)) {
-      for (const matchedPath of result.paths) exactDirectPaths.add(matchedPath);
+  if (localRepositoryMatches) {
+    for (const evidence of record.evidence) {
+      if (repositoryBoundMode && evidence.source_id !== repositoryId) continue;
+      const result = pathSignal({ kind: 'evidence_locator', pattern: evidence.locator, changes });
+      if (!result) continue;
+      signals.push(result.signal);
+      paths.push(...result.paths);
+      matchedEvidenceIds.add(evidence.id);
+      if (!hasGlob(evidence.locator)) {
+        for (const matchedPath of result.paths) exactDirectPaths.add(matchedPath);
+      }
     }
   }
-  for (const pattern of record.applies_to) {
-    const result = pathSignal({ kind: 'applies_to', pattern, changes });
-    if (!result) continue;
-    signals.push(result.signal);
-    paths.push(...result.paths);
-    if (!hasGlob(pattern)) {
-      for (const matchedPath of result.paths) exactDirectPaths.add(matchedPath);
+
+  if (unqualifiedLocalPathsMatch) {
+    for (const pattern of record.applies_to) {
+      const result = pathSignal({ kind: 'applies_to', pattern, changes });
+      if (!result) continue;
+      signals.push(result.signal);
+      paths.push(...result.paths);
+      if (!hasGlob(pattern)) {
+        for (const matchedPath of result.paths) exactDirectPaths.add(matchedPath);
+      }
     }
   }
-  for (const pattern of record.freshness_paths) {
-    const result = pathSignal({ kind: 'freshness_path', pattern, changes });
+
+  for (const trigger of record.freshness_paths) {
+    if (trigger.repository_id === undefined && !unqualifiedLocalPathsMatch) continue;
+    if (trigger.repository_id !== undefined && trigger.repository_id !== repositoryId) continue;
+    const result = pathSignal({
+      kind: 'freshness_path',
+      pattern: trigger.pattern,
+      changes,
+      repositoryId: trigger.repository_id
+    });
     if (!result) continue;
     signals.push(result.signal);
     paths.push(...result.paths);
   }
-  for (const relationship of record.relationships.filter((item) =>
-    ['code', 'external'].includes(item.target_kind)
-    && !item.target.includes('://')
-  )) {
-    const pattern = validatePattern(relationship.target, `${record.id} relationship path`);
-    const result = pathSignal({ kind: 'relationship_path', pattern, changes });
-    if (!result) continue;
-    signals.push({ ...result.signal, relationship_type: relationship.type });
-    paths.push(...result.paths);
+
+  if (unqualifiedLocalPathsMatch) {
+    for (const relationship of record.relationships.filter((item) =>
+      ['code', 'external'].includes(item.target_kind)
+      && !item.target.includes('://')
+    )) {
+      const pattern = validatePattern(relationship.target, `${record.id} relationship path`);
+      const result = pathSignal({ kind: 'relationship_path', pattern, changes });
+      if (!result) continue;
+      signals.push({ ...result.signal, relationship_type: relationship.type });
+      paths.push(...result.paths);
+    }
   }
 
   if (signals.length === 0) return null;
@@ -446,13 +495,22 @@ function mergeRelationshipAssessments(assessments) {
   };
 }
 
-function classifyRecords(records, changes) {
+function classifyRecords(records, changes, repositoryId, localSourceIds) {
   const accepted = [...records.values()]
     .filter((record) => record.status === 'accepted')
     .sort((left, right) => compareUtf8(left.id, right.id));
+  const repositoryBoundMode = accepted.some((record) =>
+    record.freshness_paths.some((trigger) => trigger.repository_id !== undefined)
+  );
   const direct = new Map();
   for (const record of accepted) {
-    const assessment = directAssessment(record, changes);
+    const assessment = directAssessment(
+      record,
+      changes,
+      repositoryId,
+      repositoryBoundMode,
+      localSourceIds
+    );
     if (assessment) direct.set(record.id, assessment);
   }
 
@@ -482,7 +540,15 @@ function classifyRecords(records, changes) {
     affected.push(mergeRelationshipAssessments(assessments));
   }
   affected.sort((left, right) => compareUtf8(left.knowledge_id, right.knowledge_id));
-  return { acceptedCount: accepted.length, affected };
+  return {
+    acceptedCount: accepted.length,
+    affected,
+    dependencyTriggerCount: accepted.reduce(
+      (count, record) => count + record.dependency_triggers.length,
+      0
+    ),
+    repositoryBoundMode
+  };
 }
 
 function verifyOrderedStrings(values, label, { paths = false, nonEmpty = false } = {}) {
@@ -537,7 +603,9 @@ function verifyBasisSignal(signal, label) {
     signal,
     type === 'relationship_path'
       ? ['type', 'locator', 'match', 'change_types', 'paths', 'relationship_type']
-      : ['type', 'locator', 'match', 'change_types', 'paths'],
+      : type === 'freshness_path'
+        ? ['type', 'locator', 'match', 'change_types', 'paths', 'repository_id']
+        : ['type', 'locator', 'match', 'change_types', 'paths'],
     'impact.result_evidence_invalid',
     label
   );
@@ -556,6 +624,13 @@ function verifyBasisSignal(signal, label) {
     fail('impact.result_evidence_invalid', `${label} contains an unsupported change type`);
   }
   verifyOrderedStrings(signal.paths, `${label} paths`, { paths: true, nonEmpty: true });
+  if (type === 'freshness_path' && signal.repository_id !== undefined) {
+    requireNonEmptyString(
+      signal.repository_id,
+      'impact.result_evidence_invalid',
+      `${label} repository_id`
+    );
+  }
   if (type === 'relationship_path') {
     requireNonEmptyString(
       signal.relationship_type,
@@ -727,10 +802,21 @@ export function classifyKnowledgeImpact(input) {
   }
 
   const { manifest: packManifest, knowledgePaths } = parsePack(verified);
-  const records = parseRecords(verified, packManifest, knowledgePaths);
+  const { localSourceIds, records } = parseRecords(verified, packManifest, knowledgePaths);
   const limitations = [...changeSet.limitations];
-  const classified = classifyRecords(records, changeSet.changes);
+  const classified = classifyRecords(
+    records,
+    changeSet.changes,
+    changeSet.repository_id,
+    localSourceIds
+  );
   const acceptedCount = classified.acceptedCount;
+  const dependencyTriggerNote = classified.dependencyTriggerCount === 0
+    ? ''
+    : ` ${classified.dependencyTriggerCount} dependency_changed trigger(s) remain freshness metadata and were not path-matched because their values do not identify repository-relative paths.`;
+  const repositoryBindingNote = classified.repositoryBoundMode
+    ? ' Repository-bound source matching is active; path surfaces were filtered using declared source bindings and the change-set repository_id.'
+    : '';
   const affected = classified.affected.map((assessment) => ({
     ...assessment,
     limitations: sortUnique([...assessment.limitations, ...limitations])
@@ -739,16 +825,16 @@ export function classifyKnowledgeImpact(input) {
   let rationale;
   if (affected.length > 0) {
     outcome = 'knowledge_update_required';
-    rationale = `${affected.length} accepted knowledge record(s) have deterministic path or bounded relationship evidence for review; no rewrite is proposed.`;
+    rationale = `${affected.length} accepted knowledge record(s) have deterministic path or bounded relationship evidence for review; no rewrite is proposed.${dependencyTriggerNote}${repositoryBindingNote}`;
   } else if (changeSet.completeness === 'partial') {
     outcome = 'indeterminate';
-    rationale = `No visible change matched ${acceptedCount} accepted record(s), but partial change evidence cannot support an unqualified no-change conclusion.`;
+    rationale = `No visible change matched ${acceptedCount} accepted record(s), but partial change evidence cannot support an unqualified no-change conclusion.${dependencyTriggerNote}${repositoryBindingNote}`;
   } else if (changeSet.changes.length === 0) {
     outcome = 'no_knowledge_change';
-    rationale = `The complete normalized change set is an explicit no-op; ${acceptedCount} accepted record(s) were examined against zero changed paths.`;
+    rationale = `The complete normalized change set is an explicit no-op; ${acceptedCount} accepted record(s) were examined against zero changed paths.${dependencyTriggerNote}${repositoryBindingNote}`;
   } else {
     outcome = 'no_knowledge_change';
-    rationale = `The complete normalized change set has no exact, declared-glob, freshness-path, relationship-path, or bounded outbound relationship match across ${acceptedCount} accepted record(s).`;
+    rationale = `The complete normalized change set has no exact, declared-glob, freshness-path, relationship-path, or bounded outbound relationship match across ${acceptedCount} accepted record(s).${dependencyTriggerNote}${repositoryBindingNote}`;
   }
 
   return verifyKnowledgeImpactAssessment({

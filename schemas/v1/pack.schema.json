@@ -159,7 +159,12 @@
         },
         "description": { "type": "string", "minLength": 10 },
         "root": {
-          "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+          "oneOf": [
+            { "const": "." },
+            {
+              "$ref": "https://knowledge-companion.dev/schemas/v1/common.schema.json#/$defs/safeRelativePath"
+            }
+          ]
         },
         "uri": { "type": "string", "format": "uri" },
         "extensions": {

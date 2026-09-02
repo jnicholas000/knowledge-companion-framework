@@ -8,6 +8,7 @@ const guidanceByCode = Object.freeze({
   'extension.relationship_undeclared': 'Use a core relationship type, or declare this x-... type under extensions.relationship_types in pack.yaml.',
   'evidence.path_missing': 'Correct the locator relative to its declared local source root and ensure the file exists.',
   'evidence.path_unsafe': 'Use a relative locator that stays inside the declared local source root.',
+  'path.invalid': 'Use an NFC-normalized forward-slash relative path or glob with no empty, dot, parent, or trailing-slash segment; use directory/** to match directory contents.',
   'freshness.review_due': 'Re-verify the knowledge against its evidence before updating review_after; do not advance the date without review.',
   'snapshot.pack_mismatch': 'Use the validated pack ID and keep the snapshot identity within one pack.',
   'snapshot.version_mismatch': 'Use the validated pack version for this snapshot.',

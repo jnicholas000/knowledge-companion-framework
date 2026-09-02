@@ -45,7 +45,7 @@ relationships; that remains Milestone 4 work.
 An impact classifier compares changed paths and change semantics with:
 
 - record `applies_to` paths
-- freshness invalidation triggers
+- `path_changed` freshness invalidation triggers
 - evidence locators
 - knowledge relationships
 - pack policy
@@ -61,6 +61,36 @@ structured basis, evidence strength, limitations, and explanation. Exact local e
 uncertain meaning. Declared globs and one outbound, allowlisted structural relationship hop establish
 bounded interpretive scope; historical, business, domain, or operational ambiguity remains
 SME-required. Weak, inbound-only, and second-hop adjacency does not propagate impact.
+
+`dependency_changed`, `event`, and `manual` triggers remain structured freshness metadata but do
+not match normalized repository paths in the Phase Two classifier. In particular,
+`dependency_changed.value` is an opaque dependency label: it carries no source ID, repository
+identity, or repository-relative path. Treating that label as a path, basename, or repository name
+would invent fuzzy semantics and create cross-repository false positives. A future event-aware
+consumer may use the metadata when it has separately defined event/source identity, but the current
+path classifier does not.
+
+The pack source registry is the durable repository-matching authority. For a classifier-visible
+change inside another repository, the caller must first apply the existing fail-closed exact
+repository/base/target revision preflight, then supply that repository's normalized change set and
+author an explicit `path_changed` path or glob whose `repository_id` is the exact ID of the matching
+declared pack source. The trigger matches only when that source ID also equals the normalized change
+set's `repository_id`; a bound trigger that names no declared source fails closed.
+
+If any accepted record in the snapshot uses a repository-bound `path_changed` trigger, source-bound
+matching becomes active for that run. Bound triggers participate only for their exact declared
+source. Source-qualified local evidence participates only for its exact declared source. Unbound
+`applies_to`, code/external relationship paths, and unbound freshness paths participate only when
+the pack has exactly one declared local source and the change set's `repository_id` equals that
+source ID; with multiple local sources those unqualified surfaces fail closed as ambiguous.
+Canonical validation rejects a bound trigger naming an undeclared source before classification. An
+unrelated repository therefore cannot select records through an identical relative path. A pack with no bound trigger retains the established ordinary unbound local behavior.
+A `dependency_changed` trigger may coexist to preserve the human/review freshness reason, but it
+does not replace the explicit bound path trigger.
+
+Repository/source binding is a matching guard, not repository authentication, so the caller-side
+exact repository/revision preflight remains mandatory. The classifier rationale reports active
+source-bound matching and non-path-matched dependency triggers so neither limitation is silent.
 
 The experiment is deliberately not the Stable V1 `knowledge-impact` record. It creates no
 candidate, proposed wording, approval, or write instruction. A complete unmatched input can support
@@ -86,6 +116,40 @@ Candidate classification has two independent axes:
 Phase One applies it automatically. `interpretive` requires a reviewer to judge meaning.
 `sme_required` identifies knowledge that repository evidence alone cannot establish and requires an
 accountable subject-matter expert.
+
+### Non-Repository Evidence Impact Bridge
+
+The current version-1 learning pipeline is repository-change-rooted. A `learning-candidate` requires
+an `impact_id`; the corresponding version-1 `knowledge-impact` contract represents impact from
+normalized repository change evidence and requires non-empty repository `changed_paths` for an
+update-required declaration. An SME answer, unanswered-question resolution, policy clarification,
+or other non-repository evidence event is not a repository change and MUST NOT be forced through
+this contract by inventing a path or synthetic repository mutation.
+
+A future unanswered-question/SME workflow therefore requires a separately versioned,
+provider-neutral **non-repository evidence impact bridge** before it may enter the reviewed candidate
+lifecycle. The bridge semantics are:
+
+- bind the event to an exact pack and fixed snapshot identity;
+- name the durable question or knowledge-gap identity that caused the review;
+- retain the accountable evidence source, actor, observation time, scope, limitations, and privacy
+  boundary;
+- identify the knowledge surface that may require review without claiming repository-path causality;
+- preserve the review requirement and all uncertainty carried by the triggering evidence;
+- contain no fabricated repository `changed_paths`; and
+- produce or authorize a `coverage_gap` learning candidate only through a compatible, explicitly
+  versioned candidate/impact reference contract.
+
+The first implementation must be a namespaced pack extension or external adapter. It may capture,
+deduplicate, route, defer, reject, and answer knowledge-gap records, but it MUST NOT claim that the
+current version-1 repository-change `knowledge-impact`/`learning-candidate` pair natively represents
+an SME answer. Promotion to a core bridge contract requires evidence from at least two unrelated
+packs plus validation of stale-snapshot rejection, authorization, provenance, and no-direct-mutation
+behavior.
+
+Until that bridge exists and is approved, an SME answer remains durable evidence only. It may inform
+manual review, but it cannot be represented as an existing version-1 `coverage_gap` candidate by
+fabricating repository change evidence.
 
 ## Lifecycle
 
