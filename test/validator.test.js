@@ -54,7 +54,7 @@ test('content discovery rejects brace ranges instead of omitting declared record
 test('content discovery rejects backtracking-prone concatenated ranges before matching', () => {
   const pattern = `${'{1..11..10}'.repeat(30)}.md`;
   assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
-    [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace complexity/);
+    [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace range/);
   assert.throws(() => discoverContentGroups({ content: {
     knowledge: ['knowledge/item-{1..1000000000}.md'] } }, []),
   /Unsupported content glob brace range/);
@@ -62,10 +62,17 @@ test('content discovery rejects backtracking-prone concatenated ranges before ma
 
 test('content discovery rejects repeated, nested and quantified brace lists before matching', () => {
   for (const pattern of [`${'{1,11}'.repeat(30)}.md`, 'knowledge/{x,{1,11}}.md',
-    'knowledge/+({1,11}).md', 'knowledge/{1,11}(1|11).md']) {
+    'knowledge/+({1,11}).md', 'knowledge/{1,11}(1|11).md',
+    `knowledge/[${'{1,11}'.repeat(30)}.md`]) {
     assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
       [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace complexity/);
   }
+});
+
+test('literal character-class braces retain ordinary matching', () => {
+  const paths = ['knowledge/{{.md', 'knowledge/{a,b}.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/[{][{].md'] } }, paths).discovered.get('knowledge'), ['knowledge/{{.md']);
 });
 
 test('strict validation rejects an unsupported range instead of accepting an unchecked pack', async () => {
@@ -78,10 +85,9 @@ test('strict validation rejects an unsupported range instead of accepting an unc
   /Unsupported content glob brace range/);
 });
 
-test('deep nested brace patterns fail explicitly before reaching the matcher', () => {
+test('deep literal brace patterns cannot exhaust the content discovery stack', () => {
   const pattern = `${'{'.repeat(10000)}x${'}'.repeat(10000)}`;
-  assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
-    ['knowledge/a.md']), /Unsupported content glob brace complexity/);
+  assert.doesNotThrow(() => discoverContentGroups({ content: { knowledge: [pattern] } }, ['knowledge/a.md']));
 });
 
 test('file discovery propagates filesystem failures instead of accepting an empty tree', async () => {

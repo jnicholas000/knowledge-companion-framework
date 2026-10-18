@@ -100,24 +100,6 @@ function matchContentPaths(paths, patterns) {
   const visited = new Set();
   let negativeCount = 0;
   for (const pattern of patterns) {
-    // One flat brace list is bounded; repeated/nested prefix-sharing lists or
-    // lists inside parenthesized repetition can create exponential backtracking.
-    let braceGroups = 0;
-    let inCharacterClass = false;
-    let hasParenthesis = false;
-    for (let index = 0; index < pattern.length; index += 1) {
-      const character = pattern[index];
-      if (character === '\\') { index += 1; continue; }
-      if (character === '[') inCharacterClass = true;
-      else if (character === ']') inCharacterClass = false;
-      else if (!inCharacterClass) {
-        if (character === '{') braceGroups += 1;
-        if (character === '(' || character === ')') hasParenthesis = true;
-      }
-    }
-    if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
-      throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
-    }
     // Picomatch's character-class range fallback can silently omit records.
     // Reject ranges before matching, including empty packs and exclusions;
     // explicit lists and ordinary wildcards remain supported without expansion.
@@ -127,6 +109,15 @@ function matchContentPaths(paths, patterns) {
         throw new Error(`Unsupported content glob brace range: ${pattern}; use a wildcard or separate simple patterns`);
       }
     }, true);
+    // Use the matcher's own parsed tokens so escaped/literal braces and
+    // malformed character classes cannot disagree with a second syntax scanner.
+    const tokens = matcher.state.tokens ?? [];
+    const braceGroups = tokens.filter((token) => token.type === 'brace'
+      && token.value === '{' && token.output === '(').length;
+    const hasParenthesis = tokens.some((token) => token.type === 'paren');
+    if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
+      throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
+    }
     const negative = matcher.state.negated || matcher.state.negatedExtglob;
     if (negative) negativeCount += 1;
     for (const filePath of paths) {
