@@ -45,6 +45,15 @@ test('brace lists match alternatives rather than the unexpanded filename', () =>
   ['knowledge/{a,b}.md']);
 });
 
+test('negative extglobs with wildcards retain non-draft records', () => {
+  const paths = ['knowledge/a.md', 'knowledge/a.draft.md', 'knowledge/b.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/!(*.draft).md'] } }, paths).discovered.get('knowledge'),
+  ['knowledge/a.md', 'knowledge/b.md']);
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['!(*.draft).md'] } }, ['a.md', 'a.draft.md']).discovered.get('knowledge'), ['a.md']);
+});
+
 test('content discovery rejects brace ranges instead of omitting declared records', () => {
   for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/item-{10..1}.md',
     'knowledge/item-{01..10}.md', 'knowledge/item-{1..5..02}.md',

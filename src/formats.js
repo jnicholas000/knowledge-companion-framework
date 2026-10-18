@@ -98,23 +98,28 @@ function createContentMatcher(pattern) {
   // Picomatch's character-class range fallback can silently omit records.
   // Reject ranges before matching, including empty packs and exclusions;
   // explicit lists and ordinary wildcards remain supported without expansion.
-  const matcher = picomatch(pattern, {
+  const options = {
     dot: false,
-    // Force regex matching even when a filename equals the unexpanded glob.
-    capture: true,
     expandRange: () => {
       throw new Error(`Unsupported content glob brace range: ${pattern}; use a wildcard or separate simple patterns`);
     }
-  }, true);
+  };
+  const regex = picomatch.makeRe(pattern, options, false, true);
+  const state = regex.state;
+  delete regex.state;
   // Use the matcher's own parsed tokens so escaped/literal braces and
   // malformed character classes cannot disagree with a second syntax scanner.
-  const tokens = matcher.state.tokens ?? [];
+  const tokens = state.tokens ?? [];
   const braceGroups = tokens.filter((token) => token.type === 'brace'
     && token.value === '{' && token.output === '(').length;
   const hasParenthesis = tokens.some((token) => token.type === 'paren');
   if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
     throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
   }
+  // The public regex test has no original-glob equality shortcut. Keep capture
+  // disabled because it changes negative extglob compilation in picomatch.
+  const matcher = (input) => picomatch.test(input, regex, options);
+  matcher.state = state;
   return matcher;
 }
 
@@ -132,7 +137,7 @@ function matchContentPaths(paths, patterns) {
     const negative = matcher.state.negated || matcher.state.negatedExtglob;
     if (negative) negativeCount += 1;
     for (const filePath of paths) {
-      const result = matcher(filePath, true);
+      const result = matcher(filePath);
       visited.add(result.output);
       if (!(negative ? !result.isMatch : result.isMatch)) continue;
       if (negative) omitted.add(result.output);
