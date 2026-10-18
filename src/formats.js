@@ -117,14 +117,14 @@ function createContentMatcher(pattern) {
   // malformed character classes cannot disagree with a second syntax scanner.
   const tokens = state.tokens ?? [];
   const braceGroups = tokens.filter((token) => token.type === 'brace'
-    && token.value === '{' && token.output === '(').length;
+    && token.output === '(').length;
   const hasParenthesis = tokens.some((token) => token.type === 'paren');
   let inBraceList = false;
   let hasNonLiteralAlternative = false;
   for (const token of tokens) {
-    if (token.type === 'brace' && token.value === '{' && token.output === '(') {
+    if (token.type === 'brace' && token.output === '(') {
       inBraceList = true;
-    } else if (token.type === 'brace' && token.value === '}') {
+    } else if (token.type === 'brace' && token.output === ')') {
       inBraceList = false;
     } else if (inBraceList && (!['text', 'comma', 'dot', 'slash'].includes(token.type)
       || (token.type === 'text' && token.value.includes('|')))) {

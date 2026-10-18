@@ -72,7 +72,8 @@ function importOptions(pack, overrides = {}) {
 
 test('unsupported content globs retain coded snapshot errors during capture and export', async () => {
   for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/{a,b}{c,d}.md',
-    String.raw`knowledge/{a\d,b}.md`, 'knowledge/{+draft,published}.md']) {
+    String.raw`knowledge/{a\d,b}.md`, 'knowledge/{+draft,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`]) {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kcf-invalid-glob-'));
     try {
       await fs.cp(path.join(repositoryRoot, packs[0].relative), root, { recursive: true });

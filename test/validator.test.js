@@ -77,6 +77,9 @@ test('content discovery rejects brace ranges instead of omitting declared record
   assert.deepEqual(discoverContentGroups({ content: {
     knowledge: ['knowledge/item-{1,2,10}.md'] } }, paths).discovered.get('knowledge'),
   paths.slice().sort());
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/item-{"1","2","10"}.md'] } }, paths).discovered.get('knowledge'),
+  paths.slice().sort());
 });
 
 test('content discovery rejects backtracking-prone concatenated ranges before matching', () => {
@@ -94,7 +97,9 @@ test('content discovery rejects repeated, nested and quantified brace lists befo
     `knowledge/[${'{1,11}'.repeat(30)}.md`,
     `knowledge/{${'*a'.repeat(15)}Z,b}.md`, 'knowledge/{a?,b}.md',
     'knowledge/{[ab],c}.md', 'knowledge/{a|b,c}.md',
-    'knowledge/{+draft,published}.md', 'knowledge/{draft+,published}.md']) {
+    'knowledge/{+draft,published}.md', 'knowledge/{draft+,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`, 'knowledge/{"a",b}{c,d}.md',
+    `knowledge/{"b",${'*a'.repeat(15)}Z}.md`]) {
     assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
       [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob/);
   }
@@ -108,12 +113,13 @@ test('literal character-class braces retain ordinary matching', () => {
 
 test('unsupported content patterns produce actionable validation and CLI JSON diagnostics', async () => {
   for (const pattern of ['ranged/item-{1..10}.md', '!ranged/item-{1..10}.md',
-    `ranged/[${'{1,11}'.repeat(30)}.md`, 'knowledge/{+draft,published}.md']) {
+    `ranged/[${'{1,11}'.repeat(30)}.md`, 'knowledge/{+draft,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`]) {
     let packRoot;
     await withExamplePack(async (root) => {
       packRoot = root;
       await replaceIn(root, 'pack.yaml', '    - knowledge/**/*.md',
-        `    - knowledge/**/*.md\n    - "${pattern}"`);
+        `    - knowledge/**/*.md\n    - ${JSON.stringify(pattern)}`);
     }, (result) => {
       assert.equal(result.valid, false);
       const finding = result.errors.find((item) => item.code === 'content.pattern_invalid');
