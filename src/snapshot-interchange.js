@@ -59,7 +59,13 @@ function parsePackIdentity(manifest) {
 }
 
 function discoverRecordIds(packManifest, filesByPath) {
-  const { discovered, overlaps } = discoverContentGroups(packManifest, [...filesByPath.keys()]);
+  let discovery;
+  try {
+    discovery = discoverContentGroups(packManifest, [...filesByPath.keys()]);
+  } catch (error) {
+    throw new InterchangeError('snapshot.manifest_invalid', `pack.yaml content patterns are invalid: ${error.message}`);
+  }
+  const { discovered, overlaps } = discovery;
   if (overlaps.length > 0) {
     const overlap = overlaps[0];
     throw new InterchangeError(

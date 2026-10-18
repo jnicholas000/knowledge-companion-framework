@@ -120,7 +120,13 @@ function parsePack(verified) {
   } catch (error) {
     fail('impact.pack_invalid', `pack.yaml cannot be parsed: ${error.message}`);
   }
-  const { discovered, overlaps } = discoverContentGroups(manifest, [...verified.files.keys()]);
+  let discovery;
+  try {
+    discovery = discoverContentGroups(manifest, [...verified.files.keys()]);
+  } catch (error) {
+    fail('impact.pack_invalid', `pack.yaml content patterns are invalid: ${error.message}`);
+  }
+  const { discovered, overlaps } = discovery;
   if (overlaps.length > 0) {
     fail('impact.pack_invalid', `${overlaps[0].path} belongs to multiple content groups`);
   }
