@@ -10,4 +10,4 @@ approval_policy = "on-request"
 approvals_reviewer = "auto_review"
 
 [agents]
-max_threads = 2
+max_concurrent_threads_per_session = 1

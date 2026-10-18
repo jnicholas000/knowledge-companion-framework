@@ -35,6 +35,49 @@ test('content discovery preserves ordered exclusion, reinclusion and glob gramma
   assert.deepEqual(overlap, [{ path: 'knowledge/a.md', priorOwner: 'knowledge', group: 'impacts' }]);
 });
 
+test('content discovery expands bounded numeric ranges without omitting multi-digit records', () => {
+  const paths = Array.from({ length: 12 }, (_, index) => `knowledge/item-${index}.md`);
+  const select = (patterns, candidates = paths) => discoverContentGroups(
+    { content: { knowledge: patterns } }, candidates).discovered.get('knowledge');
+  const expected = paths.slice(1, 11).sort();
+  assert.deepEqual(select(['knowledge/item-{1..10}.md']), expected);
+  assert.deepEqual(select(['knowledge/item-{10..1}.md']), expected);
+  assert.deepEqual(select(['knowledge/item-{1..10..2}.md']),
+    [1, 3, 5, 7, 9].map((value) => `knowledge/item-${value}.md`).sort());
+  assert.deepEqual(select(['knowledge/item-{1..10}.md', '!knowledge/item-{2..9}.md',
+    'knowledge/item-5.md']), ['knowledge/item-1.md', 'knowledge/item-10.md', 'knowledge/item-5.md']);
+  assert.deepEqual(select(['knowledge/item-{01..10}.md'],
+    ['knowledge/item-01.md', 'knowledge/item-09.md', 'knowledge/item-10.md', 'knowledge/item-1.md']),
+  ['knowledge/item-01.md', 'knowledge/item-09.md', 'knowledge/item-10.md']);
+  assert.deepEqual(select(['knowledge/item-{-2..2}.md'],
+    ['knowledge/item--2.md', 'knowledge/item--1.md', 'knowledge/item-0.md', 'knowledge/item-2.md']),
+  ['knowledge/item--1.md', 'knowledge/item--2.md', 'knowledge/item-0.md', 'knowledge/item-2.md']);
+  assert.deepEqual(select(['knowledge/item-{a..c}.md'],
+    ['knowledge/item-a.md', 'knowledge/item-b.md', 'knowledge/item-c.md']),
+  ['knowledge/item-a.md', 'knowledge/item-b.md', 'knowledge/item-c.md']);
+});
+
+test('content discovery fails closed on excessive ranges even for an empty pack', () => {
+  for (const pattern of ['knowledge/item-{1..1000000000}.md',
+    'knowledge/item-{1..9007199254740993}.md']) {
+    assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } }, []),
+      /Content glob range exceeds the 1000-value safe limit/);
+  }
+});
+
+test('strict validation inspects an invalid record at a multi-digit range endpoint', async () => {
+  await withExamplePack(async (root) => {
+    await replaceIn(root, 'pack.yaml', '    - knowledge/**/*.md',
+      '    - knowledge/**/*.md\n    - ranged/item-{1..10}.md');
+    await fs.mkdir(path.join(root, 'ranged'));
+    await fs.writeFile(path.join(root, 'ranged/item-10.md'), 'invalid record');
+  }, (result) => {
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some((error) => error.path === 'ranged/item-10.md'),
+      JSON.stringify(result.errors));
+  });
+});
+
 test('deep nested brace patterns cannot exhaust the content discovery stack', () => {
   const pattern = `${'{'.repeat(10000)}x${'}'.repeat(10000)}`;
   assert.doesNotThrow(() => discoverContentGroups({ content: { knowledge: [pattern] } }, ['knowledge/a.md']));

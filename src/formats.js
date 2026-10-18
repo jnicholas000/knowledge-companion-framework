@@ -100,7 +100,37 @@ function matchContentPaths(paths, patterns) {
   const visited = new Set();
   let negativeCount = 0;
   for (const pattern of patterns) {
-    const matcher = picomatch(pattern, { dot: false }, true);
+    // Picomatch's default range compiler uses a character class, which is not
+    // equivalent to numeric brace expansion (for example, {1..10}). Compile
+    // bounded ranges explicitly; reject excessive/unsupported ranges rather
+    // than silently omitting declared records or restoring vulnerable braces.
+    let rangeValues = 0;
+    const expandRange = (...parts) => {
+      parts.pop(); // Picomatch supplies its options after the range endpoints.
+      const [first, last, stride = '1'] = parts;
+      const numeric = /^-?\d+$/.test(first) && /^-?\d+$/.test(last);
+      const letters = /^[A-Za-z]$/.test(first) && /^[A-Za-z]$/.test(last);
+      if (parts.length < 2 || parts.length > 3 || (!numeric && !letters)
+        || !/^-?\d+$/.test(stride)) throw new Error(`Unsupported content glob range: ${pattern}`);
+      const start = numeric ? Number(first) : first.charCodeAt(0);
+      const end = numeric ? Number(last) : last.charCodeAt(0);
+      const step = Math.max(1, Math.abs(Number(stride)));
+      const count = Math.floor(Math.abs(end - start) / step) + 1;
+      rangeValues += count;
+      if (![start, end, step, count].every(Number.isSafeInteger) || rangeValues > 1000) {
+        throw new Error(`Content glob range exceeds the 1000-value safe limit: ${pattern}`);
+      }
+      const width = numeric && parts.some((value) => /^-?0\d/.test(value))
+        ? Math.max(...parts.map((value) => value.length)) : 0;
+      const values = Array.from({ length: count }, (_, index) => {
+        const value = start + (start > end ? -1 : 1) * step * index;
+        if (!numeric) return String.fromCharCode(value).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+        const sign = value < 0 ? '-' : '';
+        return sign + String(Math.abs(value)).padStart(Math.max(0, width - sign.length), '0');
+      });
+      return `(?:${values.join('|')})`;
+    };
+    const matcher = picomatch(pattern, { dot: false, expandRange }, true);
     const negative = matcher.state.negated || matcher.state.negatedExtglob;
     if (negative) negativeCount += 1;
     for (const filePath of paths) {
