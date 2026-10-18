@@ -95,6 +95,9 @@ export function discoverContentGroups(manifest, paths) {
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 function createContentMatcher(pattern) {
+  if (typeof pattern === 'string' && pattern.includes('\\')) {
+    throw new Error(`Unsupported content glob escape: ${pattern}; use forward-slash paths without backslashes`);
+  }
   // Picomatch's character-class range fallback can silently omit records.
   // Reject ranges before matching, including empty packs and exclusions;
   // explicit lists and ordinary wildcards remain supported without expansion.
@@ -107,7 +110,7 @@ function createContentMatcher(pattern) {
   const regex = picomatch.makeRe(pattern, options, false, true);
   const state = regex.state;
   delete regex.state;
-  // Use the matcher's own parsed tokens so escaped/literal braces and
+  // Use the matcher's own parsed tokens so literal braces and
   // malformed character classes cannot disagree with a second syntax scanner.
   const tokens = state.tokens ?? [];
   const braceGroups = tokens.filter((token) => token.type === 'brace'

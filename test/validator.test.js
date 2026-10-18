@@ -45,6 +45,15 @@ test('brace lists match alternatives rather than the unexpanded filename', () =>
   ['knowledge/{a,b}.md']);
 });
 
+test('content globs reject regex escapes before discovering records', () => {
+  assert.throws(() => discoverContentGroups({ content: {
+    knowledge: [String.raw`knowledge/{a\d,b}.md`] } }, ['knowledge/a1.md']),
+  /Unsupported content glob escape/);
+  assert.throws(() => discoverContentGroups({ content: {
+    knowledge: [String.raw`knowledge/a\d.md`] } }, ['knowledge/a1.md']),
+  /Unsupported content glob escape/);
+});
+
 test('negative extglobs with wildcards retain non-draft records', () => {
   const paths = ['knowledge/a.md', 'knowledge/a.draft.md', 'knowledge/b.md'];
   assert.deepEqual(discoverContentGroups({ content: {

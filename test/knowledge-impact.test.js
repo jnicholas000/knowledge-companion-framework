@@ -42,7 +42,8 @@ function classify(caseFixture, overrides = {}) {
 
 test('unsupported snapshot content globs retain coded errors through impact classification', () => {
   const caseFixture = fixture.cases[0];
-  for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/{a,b}{c,d}.md']) {
+  for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/{a,b}{c,d}.md',
+    String.raw`knowledge/{a\d,b}.md`]) {
     const snapshot = structuredClone(snapshots.get(caseFixture.pack_id));
     const file = snapshot.manifest.files.find((entry) => entry.path === 'pack.yaml');
     const object = snapshot.objects.find((entry) => entry.content.digest === file.content.digest);
