@@ -35,52 +35,39 @@ test('content discovery preserves ordered exclusion, reinclusion and glob gramma
   assert.deepEqual(overlap, [{ path: 'knowledge/a.md', priorOwner: 'knowledge', group: 'impacts' }]);
 });
 
-test('content discovery expands bounded numeric ranges without omitting multi-digit records', () => {
-  const paths = Array.from({ length: 12 }, (_, index) => `knowledge/item-${index}.md`);
-  const select = (patterns, candidates = paths) => discoverContentGroups(
-    { content: { knowledge: patterns } }, candidates).discovered.get('knowledge');
-  const expected = paths.slice(1, 11).sort();
-  assert.deepEqual(select(['knowledge/item-{1..10}.md']), expected);
-  assert.deepEqual(select(['knowledge/item-{10..1}.md']), expected);
-  assert.deepEqual(select(['knowledge/item-{1..10..2}.md']),
-    [1, 3, 5, 7, 9].map((value) => `knowledge/item-${value}.md`).sort());
-  assert.deepEqual(select(['knowledge/item-{1..5..02}.md']),
-    [1, 3, 5].map((value) => `knowledge/item-${value}.md`).sort());
-  assert.deepEqual(select(['knowledge/item-{01..10..002}.md'],
-    ['knowledge/item-01.md', 'knowledge/item-03.md', 'knowledge/item-09.md', 'knowledge/item-001.md']),
-  ['knowledge/item-01.md', 'knowledge/item-03.md', 'knowledge/item-09.md']);
-  assert.deepEqual(select(['knowledge/item-{1..10}.md', '!knowledge/item-{2..9}.md',
-    'knowledge/item-5.md']), ['knowledge/item-1.md', 'knowledge/item-10.md', 'knowledge/item-5.md']);
-  assert.deepEqual(select(['knowledge/item-{01..10}.md'],
-    ['knowledge/item-01.md', 'knowledge/item-09.md', 'knowledge/item-10.md', 'knowledge/item-1.md']),
-  ['knowledge/item-01.md', 'knowledge/item-09.md', 'knowledge/item-10.md']);
-  assert.deepEqual(select(['knowledge/item-{-2..2}.md'],
-    ['knowledge/item--2.md', 'knowledge/item--1.md', 'knowledge/item-0.md', 'knowledge/item-2.md']),
-  ['knowledge/item--1.md', 'knowledge/item--2.md', 'knowledge/item-0.md', 'knowledge/item-2.md']);
-  assert.deepEqual(select(['knowledge/item-{a..c}.md'],
-    ['knowledge/item-a.md', 'knowledge/item-b.md', 'knowledge/item-c.md']),
-  ['knowledge/item-a.md', 'knowledge/item-b.md', 'knowledge/item-c.md']);
-});
-
-test('content discovery fails closed on excessive ranges even for an empty pack', () => {
-  for (const pattern of ['knowledge/item-{1..1000000000}.md',
-    'knowledge/item-{1..9007199254740993}.md']) {
-    assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } }, []),
-      /Content glob range exceeds the 1000-value safe limit/);
+test('content discovery rejects brace ranges instead of omitting declared records', () => {
+  for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/item-{10..1}.md',
+    'knowledge/item-{01..10}.md', 'knowledge/item-{1..5..02}.md',
+    'knowledge/item-{-2..2}.md', 'knowledge/item-{a..z}.md',
+    'knowledge/{x,{1..10}}.md', '!knowledge/item-{1..10}.md']) {
+    for (const paths of [[], ['knowledge/item-2.md', 'knowledge/item-10.md']]) {
+      assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } }, paths),
+        /Unsupported content glob brace range/);
+    }
   }
+  const paths = ['knowledge/item-1.md', 'knowledge/item-2.md', 'knowledge/item-10.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/item-{1,2,10}.md'] } }, paths).discovered.get('knowledge'),
+  paths.slice().sort());
 });
 
-test('strict validation inspects an invalid record at a multi-digit range endpoint', async () => {
-  await withExamplePack(async (root) => {
+test('content discovery rejects backtracking-prone concatenated ranges before matching', () => {
+  const pattern = `${'{1..11..10}'.repeat(30)}.md`;
+  assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
+    [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace range/);
+  assert.throws(() => discoverContentGroups({ content: {
+    knowledge: ['knowledge/item-{1..1000000000}.md'] } }, []),
+  /Unsupported content glob brace range/);
+});
+
+test('strict validation rejects an unsupported range instead of accepting an unchecked pack', async () => {
+  await assert.rejects(withExamplePack(async (root) => {
     await replaceIn(root, 'pack.yaml', '    - knowledge/**/*.md',
       '    - knowledge/**/*.md\n    - ranged/item-{1..10}.md');
     await fs.mkdir(path.join(root, 'ranged'));
     await fs.writeFile(path.join(root, 'ranged/item-10.md'), 'invalid record');
-  }, (result) => {
-    assert.equal(result.valid, false);
-    assert.ok(result.errors.some((error) => error.path === 'ranged/item-10.md'),
-      JSON.stringify(result.errors));
-  });
+  }, () => assert.fail('unsupported range was accepted')),
+  /Unsupported content glob brace range/);
 });
 
 test('deep nested brace patterns cannot exhaust the content discovery stack', () => {

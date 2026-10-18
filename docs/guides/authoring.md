@@ -17,11 +17,11 @@ Use `--json` for tools. Do not parse the human console format.
 
 ## Paths, Globs, And Dependency Triggers
 
-Pack `content` discovery supports bounded brace ranges such as `item-{1..10}.md`,
-descending ranges, zero padding and explicit integer steps. Ordered exclusions and
-reinclusions use the same expanded matcher. At most 1,000 range values may be compiled
-per content pattern; larger, unsafe-integer or unsupported ranges fail explicitly instead
-of silently omitting records. This discovery rule does not expand impact-path patterns.
+Pack `content` discovery supports ordinary wildcards and explicit brace lists such as
+`item-{1,2,10}.md`. Brace ranges such as `item-{1..10}.md` are unsupported and fail
+explicitly, including in exclusions and empty packs. Use an explicit list or an appropriate
+wildcard so declared records cannot be silently omitted. No range-expansion regex is compiled.
+This discovery rule does not change impact-path patterns.
 
 Use forward-slash, NFC-normalized repository-relative paths. Do not use absolute paths, drive
 prefixes, backslashes, empty segments, `.` or `..` segments, repeated slashes, or a trailing slash.
