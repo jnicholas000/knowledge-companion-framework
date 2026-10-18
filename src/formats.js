@@ -100,6 +100,8 @@ function createContentMatcher(pattern) {
   // explicit lists and ordinary wildcards remain supported without expansion.
   const matcher = picomatch(pattern, {
     dot: false,
+    // Force regex matching even when a filename equals the unexpanded glob.
+    capture: true,
     expandRange: () => {
       throw new Error(`Unsupported content glob brace range: ${pattern}; use a wildcard or separate simple patterns`);
     }

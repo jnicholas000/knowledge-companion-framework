@@ -36,6 +36,15 @@ test('content discovery preserves ordered exclusion, reinclusion and glob gramma
   assert.deepEqual(overlap, [{ path: 'knowledge/a.md', priorOwner: 'knowledge', group: 'impacts' }]);
 });
 
+test('brace lists match alternatives rather than the unexpanded filename', () => {
+  const paths = ['knowledge/a.md', 'knowledge/b.md', 'knowledge/{a,b}.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/{a,b}.md'] } }, paths).discovered.get('knowledge'), paths.slice(0, 2));
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/*.md', '!knowledge/{a,b}.md'] } }, paths).discovered.get('knowledge'),
+  ['knowledge/{a,b}.md']);
+});
+
 test('content discovery rejects brace ranges instead of omitting declared records', () => {
   for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/item-{10..1}.md',
     'knowledge/item-{01..10}.md', 'knowledge/item-{1..5..02}.md',
