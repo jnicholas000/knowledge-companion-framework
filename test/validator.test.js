@@ -82,7 +82,9 @@ test('content discovery rejects backtracking-prone concatenated ranges before ma
 test('content discovery rejects repeated, nested and quantified brace lists before matching', () => {
   for (const pattern of [`${'{1,11}'.repeat(30)}.md`, 'knowledge/{x,{1,11}}.md',
     'knowledge/+({1,11}).md', 'knowledge/{1,11}(1|11).md',
-    `knowledge/[${'{1,11}'.repeat(30)}.md`]) {
+    `knowledge/[${'{1,11}'.repeat(30)}.md`,
+    `knowledge/{${'*a'.repeat(15)}Z,b}.md`, 'knowledge/{a?,b}.md',
+    'knowledge/{[ab],c}.md', 'knowledge/{a|b,c}.md']) {
     assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
       [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace complexity/);
   }

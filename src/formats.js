@@ -113,7 +113,19 @@ function createContentMatcher(pattern) {
   const braceGroups = tokens.filter((token) => token.type === 'brace'
     && token.value === '{' && token.output === '(').length;
   const hasParenthesis = tokens.some((token) => token.type === 'paren');
-  if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
+  let inBraceList = false;
+  let hasNonLiteralAlternative = false;
+  for (const token of tokens) {
+    if (token.type === 'brace' && token.value === '{' && token.output === '(') {
+      inBraceList = true;
+    } else if (token.type === 'brace' && token.value === '}') {
+      inBraceList = false;
+    } else if (inBraceList && (!['text', 'comma', 'dot', 'slash', 'plus'].includes(token.type)
+      || (token.type === 'text' && token.value.includes('|')))) {
+      hasNonLiteralAlternative = true;
+    }
+  }
+  if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis) || hasNonLiteralAlternative) {
     throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
   }
   // The public regex test has no original-glob equality shortcut. Keep capture
