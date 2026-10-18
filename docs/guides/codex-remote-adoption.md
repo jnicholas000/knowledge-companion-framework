@@ -14,7 +14,8 @@ The checked-in `.codex/config.toml` establishes:
   reviewer instead of pausing for a person;
 - `model_reasoning_summary = "none"` and `model_verbosity = "low"` to keep routine execution
   output compact; and
-- `agents.max_threads = 2` so the root thread can keep at most one additional spawned agent thread open concurrently.
+- `agents.max_concurrent_threads_per_session = 1` so the root thread can keep at most one additional
+  spawned agent thread open concurrently; the primary thread is excluded from this limit.
 
 The configuration does not enable outbound network access. This is deliberate. Enable network access
 only in a user-level configuration or a specific session when the task requires it.
