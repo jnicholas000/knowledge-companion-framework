@@ -44,6 +44,11 @@ test('content discovery expands bounded numeric ranges without omitting multi-di
   assert.deepEqual(select(['knowledge/item-{10..1}.md']), expected);
   assert.deepEqual(select(['knowledge/item-{1..10..2}.md']),
     [1, 3, 5, 7, 9].map((value) => `knowledge/item-${value}.md`).sort());
+  assert.deepEqual(select(['knowledge/item-{1..5..02}.md']),
+    [1, 3, 5].map((value) => `knowledge/item-${value}.md`).sort());
+  assert.deepEqual(select(['knowledge/item-{01..10..002}.md'],
+    ['knowledge/item-01.md', 'knowledge/item-03.md', 'knowledge/item-09.md', 'knowledge/item-001.md']),
+  ['knowledge/item-01.md', 'knowledge/item-03.md', 'knowledge/item-09.md']);
   assert.deepEqual(select(['knowledge/item-{1..10}.md', '!knowledge/item-{2..9}.md',
     'knowledge/item-5.md']), ['knowledge/item-1.md', 'knowledge/item-10.md', 'knowledge/item-5.md']);
   assert.deepEqual(select(['knowledge/item-{01..10}.md'],

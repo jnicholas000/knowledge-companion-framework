@@ -120,8 +120,9 @@ function matchContentPaths(paths, patterns) {
       if (![start, end, step, count].every(Number.isSafeInteger) || rangeValues > 1000) {
         throw new Error(`Content glob range exceeds the 1000-value safe limit: ${pattern}`);
       }
-      const width = numeric && parts.some((value) => /^-?0\d/.test(value))
-        ? Math.max(...parts.map((value) => value.length)) : 0;
+      const endpoints = [first, last];
+      const width = numeric && endpoints.some((value) => /^-?0\d/.test(value))
+        ? Math.max(...endpoints.map((value) => value.length)) : 0;
       const values = Array.from({ length: count }, (_, index) => {
         const value = start + (start > end ? -1 : 1) * step * index;
         if (!numeric) return String.fromCharCode(value).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
