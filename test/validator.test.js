@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -75,14 +76,29 @@ test('literal character-class braces retain ordinary matching', () => {
     knowledge: ['knowledge/[{][{].md'] } }, paths).discovered.get('knowledge'), ['knowledge/{{.md']);
 });
 
-test('strict validation rejects an unsupported range instead of accepting an unchecked pack', async () => {
-  await assert.rejects(withExamplePack(async (root) => {
-    await replaceIn(root, 'pack.yaml', '    - knowledge/**/*.md',
-      '    - knowledge/**/*.md\n    - ranged/item-{1..10}.md');
-    await fs.mkdir(path.join(root, 'ranged'));
-    await fs.writeFile(path.join(root, 'ranged/item-10.md'), 'invalid record');
-  }, () => assert.fail('unsupported range was accepted')),
-  /Unsupported content glob brace range/);
+test('unsupported content patterns produce actionable validation and CLI JSON diagnostics', async () => {
+  for (const pattern of ['ranged/item-{1..10}.md', '!ranged/item-{1..10}.md',
+    `ranged/[${'{1,11}'.repeat(30)}.md`]) {
+    let packRoot;
+    await withExamplePack(async (root) => {
+      packRoot = root;
+      await replaceIn(root, 'pack.yaml', '    - knowledge/**/*.md',
+        `    - knowledge/**/*.md\n    - "${pattern}"`);
+    }, (result) => {
+      assert.equal(result.valid, false);
+      const finding = result.errors.find((item) => item.code === 'content.pattern_invalid');
+      assert.equal(finding.path, 'pack.yaml');
+      assert.equal(finding.instance_path, '/content/knowledge/1');
+      assert.match(finding.message, /Unsupported content glob brace/);
+      const cli = spawnSync(process.execPath, [path.join(repositoryRoot, 'src/cli.js'),
+        'validate', packRoot, '--strict', '--json'], { encoding: 'utf8', timeout: 10000 });
+      assert.equal(cli.status, 1, cli.stderr);
+      assert.equal(cli.stderr, '');
+      const json = JSON.parse(cli.stdout);
+      assert.equal(json.valid, false);
+      assert.deepEqual(json.errors, result.errors);
+    });
+  }
 });
 
 test('deep literal brace patterns cannot exhaust the content discovery stack', () => {

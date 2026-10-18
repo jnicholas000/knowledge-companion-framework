@@ -94,30 +94,39 @@ export function discoverContentGroups(manifest, paths) {
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+function createContentMatcher(pattern) {
+  // Picomatch's character-class range fallback can silently omit records.
+  // Reject ranges before matching, including empty packs and exclusions;
+  // explicit lists and ordinary wildcards remain supported without expansion.
+  const matcher = picomatch(pattern, {
+    dot: false,
+    expandRange: () => {
+      throw new Error(`Unsupported content glob brace range: ${pattern}; use a wildcard or separate simple patterns`);
+    }
+  }, true);
+  // Use the matcher's own parsed tokens so escaped/literal braces and
+  // malformed character classes cannot disagree with a second syntax scanner.
+  const tokens = matcher.state.tokens ?? [];
+  const braceGroups = tokens.filter((token) => token.type === 'brace'
+    && token.value === '{' && token.output === '(').length;
+  const hasParenthesis = tokens.some((token) => token.type === 'paren');
+  if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
+    throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
+  }
+  return matcher;
+}
+
+export function validateContentPattern(pattern) {
+  createContentMatcher(pattern);
+}
+
 function matchContentPaths(paths, patterns) {
   const omitted = new Set();
   const included = new Set();
   const visited = new Set();
   let negativeCount = 0;
   for (const pattern of patterns) {
-    // Picomatch's character-class range fallback can silently omit records.
-    // Reject ranges before matching, including empty packs and exclusions;
-    // explicit lists and ordinary wildcards remain supported without expansion.
-    const matcher = picomatch(pattern, {
-      dot: false,
-      expandRange: () => {
-        throw new Error(`Unsupported content glob brace range: ${pattern}; use a wildcard or separate simple patterns`);
-      }
-    }, true);
-    // Use the matcher's own parsed tokens so escaped/literal braces and
-    // malformed character classes cannot disagree with a second syntax scanner.
-    const tokens = matcher.state.tokens ?? [];
-    const braceGroups = tokens.filter((token) => token.type === 'brace'
-      && token.value === '{' && token.output === '(').length;
-    const hasParenthesis = tokens.some((token) => token.type === 'paren');
-    if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
-      throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
-    }
+    const matcher = createContentMatcher(pattern);
     const negative = matcher.state.negated || matcher.state.negatedExtglob;
     if (negative) negativeCount += 1;
     for (const filePath of paths) {

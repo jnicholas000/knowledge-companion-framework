@@ -23,7 +23,8 @@ parenthesized groups are unsupported because prefix-sharing alternatives can cau
 backtracking. Use separate simple content patterns instead. Brace ranges such as `item-{1..10}.md` fail
 explicitly, including in exclusions and empty packs. Use an explicit list or an appropriate
 wildcard so declared records cannot be silently omitted. No range-expansion regex is compiled.
-This discovery rule does not change impact-path patterns.
+Validation reports unsupported syntax as `content.pattern_invalid` at the affected content
+pattern JSON pointer, including with `--json`. This discovery rule does not change impact-path patterns.
 
 Use forward-slash, NFC-normalized repository-relative paths. Do not use absolute paths, drive
 prefixes, backslashes, empty segments, `.` or `..` segments, repeated slashes, or a trailing slash.

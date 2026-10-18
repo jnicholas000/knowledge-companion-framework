@@ -1,5 +1,6 @@
 const guidanceByCode = Object.freeze({
   'parse.invalid': 'Fix the YAML, JSON, or Markdown front matter syntax, then rerun validation.',
+  'content.pattern_invalid': 'Use an ordinary wildcard or separate simple content patterns; ranges, repeated/nested brace lists and lists with parenthesized groups are unsupported.',
   'schema.invalid': 'Add or correct the value at this location so it satisfies the canonical JSON Schema.',
   'reference.knowledge_missing': 'Use an existing discovered knowledge record ID, or add the intended record to the manifest content globs.',
   'reference.evidence_missing': 'Reference an evidence ID supplied by the record, or add the missing evidence item.',
