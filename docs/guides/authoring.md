@@ -17,8 +17,10 @@ Use `--json` for tools. Do not parse the human console format.
 
 ## Paths, Globs, And Dependency Triggers
 
-Pack `content` discovery supports ordinary wildcards and explicit brace lists such as
-`item-{1,2,10}.md`. Brace ranges such as `item-{1..10}.md` are unsupported and fail
+Pack `content` discovery supports ordinary wildcards and one flat brace list such as
+`item-{1,2,10}.md` per pattern. Repeated/nested brace lists and brace lists combined with
+parenthesized groups are unsupported because prefix-sharing alternatives can cause regex
+backtracking. Use separate simple content patterns instead. Brace ranges such as `item-{1..10}.md` fail
 explicitly, including in exclusions and empty packs. Use an explicit list or an appropriate
 wildcard so declared records cannot be silently omitted. No range-expansion regex is compiled.
 This discovery rule does not change impact-path patterns.

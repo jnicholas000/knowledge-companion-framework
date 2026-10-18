@@ -100,13 +100,31 @@ function matchContentPaths(paths, patterns) {
   const visited = new Set();
   let negativeCount = 0;
   for (const pattern of patterns) {
+    // One flat brace list is bounded; repeated/nested prefix-sharing lists or
+    // lists inside parenthesized repetition can create exponential backtracking.
+    let braceGroups = 0;
+    let inCharacterClass = false;
+    let hasParenthesis = false;
+    for (let index = 0; index < pattern.length; index += 1) {
+      const character = pattern[index];
+      if (character === '\\') { index += 1; continue; }
+      if (character === '[') inCharacterClass = true;
+      else if (character === ']') inCharacterClass = false;
+      else if (!inCharacterClass) {
+        if (character === '{') braceGroups += 1;
+        if (character === '(' || character === ')') hasParenthesis = true;
+      }
+    }
+    if (braceGroups > 1 || (braceGroups > 0 && hasParenthesis)) {
+      throw new Error(`Unsupported content glob brace complexity: ${pattern}; use a wildcard or separate simple patterns`);
+    }
     // Picomatch's character-class range fallback can silently omit records.
     // Reject ranges before matching, including empty packs and exclusions;
     // explicit lists and ordinary wildcards remain supported without expansion.
     const matcher = picomatch(pattern, {
       dot: false,
       expandRange: () => {
-        throw new Error(`Unsupported content glob brace range: ${pattern}; use an explicit brace list or wildcard`);
+        throw new Error(`Unsupported content glob brace range: ${pattern}; use a wildcard or separate simple patterns`);
       }
     }, true);
     const negative = matcher.state.negated || matcher.state.negatedExtglob;
