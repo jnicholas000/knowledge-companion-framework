@@ -108,6 +108,9 @@ function createContentMatcher(pattern) {
     }
   };
   const regex = picomatch.makeRe(pattern, options, false, true);
+  if (regex.source === '$^') {
+    throw new Error(`Unsupported content glob compilation: ${pattern}; use a wildcard or separate simple patterns`);
+  }
   const state = regex.state;
   delete regex.state;
   // Use the matcher's own parsed tokens so literal braces and
@@ -123,7 +126,7 @@ function createContentMatcher(pattern) {
       inBraceList = true;
     } else if (token.type === 'brace' && token.value === '}') {
       inBraceList = false;
-    } else if (inBraceList && (!['text', 'comma', 'dot', 'slash', 'plus'].includes(token.type)
+    } else if (inBraceList && (!['text', 'comma', 'dot', 'slash'].includes(token.type)
       || (token.type === 'text' && token.value.includes('|')))) {
       hasNonLiteralAlternative = true;
     }

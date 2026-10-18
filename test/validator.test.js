@@ -93,9 +93,10 @@ test('content discovery rejects repeated, nested and quantified brace lists befo
     'knowledge/+({1,11}).md', 'knowledge/{1,11}(1|11).md',
     `knowledge/[${'{1,11}'.repeat(30)}.md`,
     `knowledge/{${'*a'.repeat(15)}Z,b}.md`, 'knowledge/{a?,b}.md',
-    'knowledge/{[ab],c}.md', 'knowledge/{a|b,c}.md']) {
+    'knowledge/{[ab],c}.md', 'knowledge/{a|b,c}.md',
+    'knowledge/{+draft,published}.md', 'knowledge/{draft+,published}.md']) {
     assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
-      [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace complexity/);
+      [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob/);
   }
 });
 
@@ -107,7 +108,7 @@ test('literal character-class braces retain ordinary matching', () => {
 
 test('unsupported content patterns produce actionable validation and CLI JSON diagnostics', async () => {
   for (const pattern of ['ranged/item-{1..10}.md', '!ranged/item-{1..10}.md',
-    `ranged/[${'{1,11}'.repeat(30)}.md`]) {
+    `ranged/[${'{1,11}'.repeat(30)}.md`, 'knowledge/{+draft,published}.md']) {
     let packRoot;
     await withExamplePack(async (root) => {
       packRoot = root;
@@ -118,7 +119,7 @@ test('unsupported content patterns produce actionable validation and CLI JSON di
       const finding = result.errors.find((item) => item.code === 'content.pattern_invalid');
       assert.equal(finding.path, 'pack.yaml');
       assert.equal(finding.instance_path, '/content/knowledge/1');
-      assert.match(finding.message, /Unsupported content glob brace/);
+      assert.match(finding.message, /Unsupported content glob/);
       const cli = spawnSync(process.execPath, [path.join(repositoryRoot, 'src/cli.js'),
         'validate', packRoot, '--strict', '--json'], { encoding: 'utf8', timeout: 10000 });
       assert.equal(cli.status, 1, cli.stderr);
