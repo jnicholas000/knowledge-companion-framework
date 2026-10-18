@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 
-import micromatch from 'micromatch';
+import picomatch from 'picomatch';
 import { parseDocument } from 'yaml';
 
 export const contentGroups = Object.freeze([
@@ -14,6 +15,22 @@ export const contentGroups = Object.freeze([
   'evaluation_results',
   'reasoning_responses'
 ]);
+
+// The validator enumerates regular non-hidden files without following links.
+// Propagate read errors so an unreadable subtree cannot validate as empty.
+export async function discoverRegularFiles(root) {
+  const files = [];
+  async function visit(directory) {
+    for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+      if (entry.name.startsWith('.')) continue;
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) await visit(absolutePath);
+      else if (entry.isFile()) files.push(absolutePath);
+    }
+  }
+  await visit(root);
+  return files.sort();
+}
 
 function parseYaml(source, filePath) {
   const document = parseDocument(source, {
@@ -44,7 +61,7 @@ export function discoverContentGroups(manifest, paths) {
   const overlaps = [];
 
   for (const group of contentGroups) {
-    const matches = micromatch(uniquePaths, manifest.content[group] ?? [], { dot: false }).sort();
+    const matches = matchContentPaths(uniquePaths, manifest.content[group] ?? []).sort();
     discovered.set(group, matches);
     for (const filePath of matches) {
       const priorOwner = ownerByPath.get(filePath);
@@ -56,6 +73,49 @@ export function discoverContentGroups(manifest, paths) {
   }
 
   return { discovered, overlaps };
+}
+
+// Preserve ordered include/exclude/re-include behavior without the vulnerable
+// braces expansion dependency. Picomatch is the matcher micromatch delegates to.
+// Matching-set logic adapted from micromatch (MIT):
+// Copyright (c) 2014-present, Jon Schlinkert.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+function matchContentPaths(paths, patterns) {
+  const omitted = new Set();
+  const included = new Set();
+  const visited = new Set();
+  let negativeCount = 0;
+  for (const pattern of patterns) {
+    const matcher = picomatch(pattern, { dot: false }, true);
+    const negative = matcher.state.negated || matcher.state.negatedExtglob;
+    if (negative) negativeCount += 1;
+    for (const filePath of paths) {
+      const result = matcher(filePath, true);
+      visited.add(result.output);
+      if (!(negative ? !result.isMatch : result.isMatch)) continue;
+      if (negative) omitted.add(result.output);
+      else {
+        omitted.delete(result.output);
+        included.add(result.output);
+      }
+    }
+  }
+  const matches = negativeCount === patterns.length ? visited : included;
+  return [...matches].filter((filePath) => !omitted.has(filePath));
 }
 
 export function parseStructuredSource(source, filePath) {

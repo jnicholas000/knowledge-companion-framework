@@ -1,12 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import fg from 'fast-glob';
-
 import { appendJsonPointer, createDiagnostic } from './diagnostics.js';
 import {
   contentGroups,
   discoverContentGroups,
+  discoverRegularFiles,
   loadKnowledgeFile,
   loadStructuredFile
 } from './formats.js';
@@ -419,14 +418,7 @@ async function findManifest(root) {
 }
 
 async function discoverFiles(root, manifest, result) {
-  const absoluteFiles = await fg('**/*', {
-    absolute: true,
-    cwd: root,
-    dot: false,
-    followSymbolicLinks: false,
-    onlyFiles: true,
-    unique: true
-  });
+  const absoluteFiles = await discoverRegularFiles(root);
   const absoluteByRelative = new Map(
     absoluteFiles.map((filePath) => [relativeDisplay(root, filePath), filePath])
   );

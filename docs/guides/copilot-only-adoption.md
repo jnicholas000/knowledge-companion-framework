@@ -15,9 +15,12 @@ Keep the framework contract and its local evidence:
 
 ## Optional Personal Surfaces
 
-Private source repositories may contain `integrations/starfleet/`, `.github/agents/`, and `.codex/`
-as optional personal tooling. Those paths may be removed and are intentionally absent from this
-public distribution. Removing them must not change framework behavior or core validation.
+Private source repositories may contain `integrations/starfleet/`, `.github/agents/`, and
+`.codex/agents/` as optional personal tooling. Those paths may be removed and are intentionally
+absent from this public distribution. The bounded `.codex/config.toml` trusted-session defaults are
+included in the public distribution and are documented in
+[`codex-remote-adoption.md`](./codex-remote-adoption.md). Removing optional personal tooling must
+not change framework behavior or core validation.
 
 ## Standard Work Flow
 

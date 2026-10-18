@@ -6,10 +6,63 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { validatePack, validateSchemas } from '../src/validator.js';
+import { discoverContentGroups, discoverRegularFiles } from '../src/formats.js';
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const examplePack = path.join(repositoryRoot, 'examples', 'atlas-notes');
 const fixedNow = new Date('2026-08-05T18:00:00Z');
+
+test('content discovery preserves ordered exclusion, reinclusion and glob grammar', () => {
+  const paths = ['knowledge/a.md', 'knowledge/b.md', 'knowledge/nested/c.md',
+    'knowledge/.private.md', 'knowledge/nested/.private.md', 'knowledge/a.yaml', 'other.md'];
+  const cases = [
+    [['knowledge/**/*.md'], ['knowledge/a.md', 'knowledge/b.md', 'knowledge/nested/c.md']],
+    [['knowledge/{a,b}.md'], ['knowledge/a.md', 'knowledge/b.md']],
+    [['knowledge/?([ab]).md'], ['knowledge/a.md', 'knowledge/b.md']],
+    [['knowledge/[ab].md'], ['knowledge/a.md', 'knowledge/b.md']],
+    [['knowledge/**/*.md', '!knowledge/b.md', 'knowledge/b.md'],
+      ['knowledge/a.md', 'knowledge/b.md', 'knowledge/nested/c.md']],
+    [['knowledge/**/*.md', '!knowledge/b.md'], ['knowledge/a.md', 'knowledge/nested/c.md']],
+    [[], []],
+    [['!knowledge/b.md'], paths.filter((item) => item !== 'knowledge/b.md').sort()]
+  ];
+  for (const [patterns, expected] of cases) {
+    assert.deepEqual(discoverContentGroups({ content: { knowledge: patterns } }, paths)
+      .discovered.get('knowledge'), expected, JSON.stringify(patterns));
+  }
+  const overlap = discoverContentGroups({ content: { knowledge: ['knowledge/a.md'],
+    impacts: ['knowledge/*.md'] } }, paths).overlaps;
+  assert.deepEqual(overlap, [{ path: 'knowledge/a.md', priorOwner: 'knowledge', group: 'impacts' }]);
+});
+
+test('deep nested brace patterns cannot exhaust the content discovery stack', () => {
+  const pattern = `${'{'.repeat(10000)}x${'}'.repeat(10000)}`;
+  assert.doesNotThrow(() => discoverContentGroups({ content: { knowledge: [pattern] } }, ['knowledge/a.md']));
+});
+
+test('file discovery propagates filesystem failures instead of accepting an empty tree', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kcf-unreadable-'));
+  try {
+    await assert.rejects(discoverRegularFiles(path.join(root, 'missing')), { code: 'ENOENT' });
+    await fs.writeFile(path.join(root, 'file'), 'fixture');
+    await assert.rejects(discoverRegularFiles(path.join(root, 'file')), { code: 'ENOTDIR' });
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('file discovery excludes hidden paths and symbolic files or directories', async () => {
+  await withExamplePack(async (root) => {
+    await fs.writeFile(path.join(root, 'knowledge', '.hidden.md'), 'invalid');
+    await fs.mkdir(path.join(root, 'knowledge', '.hidden'));
+    await fs.writeFile(path.join(root, 'knowledge', '.hidden', 'invalid.md'), 'invalid');
+    await fs.symlink(path.join(root, 'knowledge', 'application-profile.md'), path.join(root, 'knowledge', 'linked.md'));
+    await fs.symlink(path.join(root, 'knowledge'), path.join(root, 'knowledge', 'linked-directory'));
+  }, (result) => {
+    assert.equal(result.valid, true, JSON.stringify(result.errors));
+    assert.equal(result.files_checked, 13);
+  });
+});
 
 async function withExamplePack(mutate, verify) {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'knowledge-companion-test-'));
