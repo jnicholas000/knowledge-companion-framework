@@ -70,6 +70,26 @@ function importOptions(pack, overrides = {}) {
   };
 }
 
+test('unsupported content globs retain coded snapshot errors during capture and export', async () => {
+  for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/{a,b}{c,d}.md',
+    String.raw`knowledge/{a\d,b}.md`, 'knowledge/{+draft,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`]) {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kcf-invalid-glob-'));
+    try {
+      await fs.cp(path.join(repositoryRoot, packs[0].relative), root, { recursive: true });
+      const manifestPath = path.join(root, 'pack.yaml');
+      const manifest = (await fs.readFile(manifestPath, 'utf8'))
+        .replace('knowledge/**/*.md', pattern);
+      await fs.writeFile(manifestPath, manifest);
+      await assert.rejects(captureDirectoryManifestSnapshot(root), expectCode('snapshot.manifest_invalid'));
+      assert.throws(() => createSnapshotExport({ files: [{ path: 'pack.yaml', bytes: manifest }] }),
+        expectCode('snapshot.manifest_invalid'));
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  }
+});
+
 test('Git-tree and content-addressed manifest experiments converge for both packs', async () => {
   const revision = await currentRevision();
   for (const pack of packs) {

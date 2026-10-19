@@ -4,6 +4,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { sha256 } from '../src/interchange.js';
+
 import {
   classifyKnowledgeImpact,
   verifyKnowledgeImpactAssessment
@@ -37,6 +39,27 @@ function classify(caseFixture, overrides = {}) {
     expected_snapshot_id: overrides.expected_snapshot_id ?? snapshot.manifest.snapshot_id
   });
 }
+
+test('unsupported snapshot content globs retain coded errors through impact classification', () => {
+  const caseFixture = fixture.cases[0];
+  for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/{a,b}{c,d}.md',
+    String.raw`knowledge/{a\d,b}.md`, 'knowledge/{+draft,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`]) {
+    const snapshot = structuredClone(snapshots.get(caseFixture.pack_id));
+    const file = snapshot.manifest.files.find((entry) => entry.path === 'pack.yaml');
+    const object = snapshot.objects.find((entry) => entry.content.digest === file.content.digest);
+    const bytes = Buffer.from(Buffer.from(object.bytes_base64, 'base64').toString('utf8')
+      .replace('knowledge/**/*.md', pattern));
+    const digest = sha256(bytes);
+    file.content.digest = digest;
+    file.byte_size = bytes.length;
+    object.content.digest = digest;
+    object.bytes_base64 = bytes.toString('base64');
+    assert.throws(() => verifySnapshotExport(snapshot), expectCode('snapshot.manifest_invalid'));
+    assert.throws(() => classify(caseFixture, { snapshot_export: snapshot }),
+      expectCode('snapshot.manifest_invalid'));
+  }
+});
 
 function selectCase(id) {
   return fixture.cases.find((caseFixture) => caseFixture.id === id);

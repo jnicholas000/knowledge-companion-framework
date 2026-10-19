@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -6,10 +7,164 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { validatePack, validateSchemas } from '../src/validator.js';
+import { discoverContentGroups, discoverRegularFiles } from '../src/formats.js';
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const examplePack = path.join(repositoryRoot, 'examples', 'atlas-notes');
 const fixedNow = new Date('2026-08-05T18:00:00Z');
+
+test('content discovery preserves ordered exclusion, reinclusion and glob grammar', () => {
+  const paths = ['knowledge/a.md', 'knowledge/b.md', 'knowledge/nested/c.md',
+    'knowledge/.private.md', 'knowledge/nested/.private.md', 'knowledge/a.yaml', 'other.md'];
+  const cases = [
+    [['knowledge/**/*.md'], ['knowledge/a.md', 'knowledge/b.md', 'knowledge/nested/c.md']],
+    [['knowledge/{a,b}.md'], ['knowledge/a.md', 'knowledge/b.md']],
+    [['knowledge/?([ab]).md'], ['knowledge/a.md', 'knowledge/b.md']],
+    [['knowledge/[ab].md'], ['knowledge/a.md', 'knowledge/b.md']],
+    [['knowledge/**/*.md', '!knowledge/b.md', 'knowledge/b.md'],
+      ['knowledge/a.md', 'knowledge/b.md', 'knowledge/nested/c.md']],
+    [['knowledge/**/*.md', '!knowledge/b.md'], ['knowledge/a.md', 'knowledge/nested/c.md']],
+    [[], []],
+    [['!knowledge/b.md'], paths.filter((item) => item !== 'knowledge/b.md').sort()]
+  ];
+  for (const [patterns, expected] of cases) {
+    assert.deepEqual(discoverContentGroups({ content: { knowledge: patterns } }, paths)
+      .discovered.get('knowledge'), expected, JSON.stringify(patterns));
+  }
+  const overlap = discoverContentGroups({ content: { knowledge: ['knowledge/a.md'],
+    impacts: ['knowledge/*.md'] } }, paths).overlaps;
+  assert.deepEqual(overlap, [{ path: 'knowledge/a.md', priorOwner: 'knowledge', group: 'impacts' }]);
+});
+
+test('brace lists match alternatives rather than the unexpanded filename', () => {
+  const paths = ['knowledge/a.md', 'knowledge/b.md', 'knowledge/{a,b}.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/{a,b}.md'] } }, paths).discovered.get('knowledge'), paths.slice(0, 2));
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/*.md', '!knowledge/{a,b}.md'] } }, paths).discovered.get('knowledge'),
+  ['knowledge/{a,b}.md']);
+});
+
+test('content globs reject regex escapes before discovering records', () => {
+  assert.throws(() => discoverContentGroups({ content: {
+    knowledge: [String.raw`knowledge/{a\d,b}.md`] } }, ['knowledge/a1.md']),
+  /Unsupported content glob escape/);
+  assert.throws(() => discoverContentGroups({ content: {
+    knowledge: [String.raw`knowledge/a\d.md`] } }, ['knowledge/a1.md']),
+  /Unsupported content glob escape/);
+});
+
+test('negative extglobs with wildcards retain non-draft records', () => {
+  const paths = ['knowledge/a.md', 'knowledge/a.draft.md', 'knowledge/b.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/!(*.draft).md'] } }, paths).discovered.get('knowledge'),
+  ['knowledge/a.md', 'knowledge/b.md']);
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['!(*.draft).md'] } }, ['a.md', 'a.draft.md']).discovered.get('knowledge'), ['a.md']);
+});
+
+test('content discovery rejects brace ranges instead of omitting declared records', () => {
+  for (const pattern of ['knowledge/item-{1..10}.md', 'knowledge/item-{10..1}.md',
+    'knowledge/item-{01..10}.md', 'knowledge/item-{1..5..02}.md',
+    'knowledge/item-{-2..2}.md', 'knowledge/item-{a..z}.md',
+    '!knowledge/item-{1..10}.md']) {
+    for (const paths of [[], ['knowledge/item-2.md', 'knowledge/item-10.md']]) {
+      assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } }, paths),
+        /Unsupported content glob brace range/);
+    }
+  }
+  const paths = ['knowledge/item-1.md', 'knowledge/item-2.md', 'knowledge/item-10.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/item-{1,2,10}.md'] } }, paths).discovered.get('knowledge'),
+  paths.slice().sort());
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/item-{"1","2","10"}.md'] } }, paths).discovered.get('knowledge'),
+  paths.slice().sort());
+});
+
+test('content discovery rejects backtracking-prone concatenated ranges before matching', () => {
+  const pattern = `${'{1..11..10}'.repeat(30)}.md`;
+  assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
+    [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob brace range/);
+  assert.throws(() => discoverContentGroups({ content: {
+    knowledge: ['knowledge/item-{1..1000000000}.md'] } }, []),
+  /Unsupported content glob brace range/);
+});
+
+test('content discovery rejects repeated, nested and quantified brace lists before matching', () => {
+  for (const pattern of [`${'{1,11}'.repeat(30)}.md`, 'knowledge/{x,{1,11}}.md',
+    'knowledge/+({1,11}).md', 'knowledge/{1,11}(1|11).md',
+    `knowledge/[${'{1,11}'.repeat(30)}.md`,
+    `knowledge/{${'*a'.repeat(15)}Z,b}.md`, 'knowledge/{a?,b}.md',
+    'knowledge/{[ab],c}.md', 'knowledge/{a|b,c}.md',
+    'knowledge/{+draft,published}.md', 'knowledge/{draft+,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`, 'knowledge/{"a",b}{c,d}.md',
+    `knowledge/{"b",${'*a'.repeat(15)}Z}.md`]) {
+    assert.throws(() => discoverContentGroups({ content: { knowledge: [pattern] } },
+      [`${'1'.repeat(45)}.yaml`]), /Unsupported content glob/);
+  }
+});
+
+test('literal character-class braces retain ordinary matching', () => {
+  const paths = ['knowledge/{{.md', 'knowledge/{a,b}.md'];
+  assert.deepEqual(discoverContentGroups({ content: {
+    knowledge: ['knowledge/[{][{].md'] } }, paths).discovered.get('knowledge'), ['knowledge/{{.md']);
+});
+
+test('unsupported content patterns produce actionable validation and CLI JSON diagnostics', async () => {
+  for (const pattern of ['ranged/item-{1..10}.md', '!ranged/item-{1..10}.md',
+    `ranged/[${'{1,11}'.repeat(30)}.md`, 'knowledge/{+draft,published}.md',
+    `knowledge/${'{"1","11"}'.repeat(30)}.md`]) {
+    let packRoot;
+    await withExamplePack(async (root) => {
+      packRoot = root;
+      await replaceIn(root, 'pack.yaml', '    - knowledge/**/*.md',
+        `    - knowledge/**/*.md\n    - ${JSON.stringify(pattern)}`);
+    }, (result) => {
+      assert.equal(result.valid, false);
+      const finding = result.errors.find((item) => item.code === 'content.pattern_invalid');
+      assert.equal(finding.path, 'pack.yaml');
+      assert.equal(finding.instance_path, '/content/knowledge/1');
+      assert.match(finding.message, /Unsupported content glob/);
+      const cli = spawnSync(process.execPath, [path.join(repositoryRoot, 'src/cli.js'),
+        'validate', packRoot, '--strict', '--json'], { encoding: 'utf8', timeout: 10000 });
+      assert.equal(cli.status, 1, cli.stderr);
+      assert.equal(cli.stderr, '');
+      const json = JSON.parse(cli.stdout);
+      assert.equal(json.valid, false);
+      assert.deepEqual(json.errors, result.errors);
+    });
+  }
+});
+
+test('deep literal brace patterns cannot exhaust the content discovery stack', () => {
+  const pattern = `${'{'.repeat(10000)}x${'}'.repeat(10000)}`;
+  assert.doesNotThrow(() => discoverContentGroups({ content: { knowledge: [pattern] } }, ['knowledge/a.md']));
+});
+
+test('file discovery propagates filesystem failures instead of accepting an empty tree', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kcf-unreadable-'));
+  try {
+    await assert.rejects(discoverRegularFiles(path.join(root, 'missing')), { code: 'ENOENT' });
+    await fs.writeFile(path.join(root, 'file'), 'fixture');
+    await assert.rejects(discoverRegularFiles(path.join(root, 'file')), { code: 'ENOTDIR' });
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('file discovery excludes hidden paths and symbolic files or directories', async () => {
+  await withExamplePack(async (root) => {
+    await fs.writeFile(path.join(root, 'knowledge', '.hidden.md'), 'invalid');
+    await fs.mkdir(path.join(root, 'knowledge', '.hidden'));
+    await fs.writeFile(path.join(root, 'knowledge', '.hidden', 'invalid.md'), 'invalid');
+    await fs.symlink(path.join(root, 'knowledge', 'application-profile.md'), path.join(root, 'knowledge', 'linked.md'));
+    await fs.symlink(path.join(root, 'knowledge'), path.join(root, 'knowledge', 'linked-directory'));
+  }, (result) => {
+    assert.equal(result.valid, true, JSON.stringify(result.errors));
+    assert.equal(result.files_checked, 13);
+  });
+});
 
 async function withExamplePack(mutate, verify) {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'knowledge-companion-test-'));

@@ -5,11 +5,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import fg from 'fast-glob';
+import picomatch from 'picomatch';
 import YAML from 'yaml';
 
 import { createSchemaValidator, schemaIds } from '../src/schema-catalog.js';
 import { validatePack } from '../src/validator.js';
+import { discoverRegularFiles } from '../src/formats.js';
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const workspacePath = path.join(repositoryRoot, 'knowledge-companion-framework.code-workspace');
@@ -113,7 +114,9 @@ test('the removable workspace maps structured YAML to canonical schemas', async 
 
     for (const { schema, direct, nested } of recordMappings) {
       const patterns = [mappings[schema]].flat().map((pattern) => pattern.replace(/^\//, ''));
-      const matched = await fg(patterns, { cwd: mappingRoot, onlyFiles: true });
+      const matched = (await discoverRegularFiles(mappingRoot))
+        .map((file) => path.relative(mappingRoot, file).split(path.sep).join('/'))
+        .filter(picomatch(patterns));
       assert.equal(matched.includes(direct), true, `${schema} must match ${direct}`);
       assert.equal(matched.includes(nested), true, `${schema} must match ${nested}`);
     }

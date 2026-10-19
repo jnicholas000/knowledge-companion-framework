@@ -17,6 +17,16 @@ Use `--json` for tools. Do not parse the human console format.
 
 ## Paths, Globs, And Dependency Triggers
 
+Pack `content` discovery supports ordinary wildcards and one flat brace list of literal path alternatives such as
+`item-{1,2,10}.md` per pattern. Repeated/nested brace lists and brace lists combined with
+parenthesized groups or wildcard alternatives are unsupported because prefix-sharing alternatives can cause regex
+backtracking. Use separate simple content patterns instead. Brace ranges such as `item-{1..10}.md` fail
+explicitly, including in exclusions and empty packs. Use an explicit list or an appropriate
+wildcard so declared records cannot be silently omitted. No range-expansion regex is compiled.
+Validation reports unsupported syntax as `content.pattern_invalid` at the affected content
+pattern JSON pointer, including with `--json`. Plus signs inside brace alternatives are unsupported; use separate patterns for those names.
+This discovery rule does not change impact-path patterns.
+
 Use forward-slash, NFC-normalized repository-relative paths. Do not use absolute paths, drive
 prefixes, backslashes, empty segments, `.` or `..` segments, repeated slashes, or a trailing slash.
 KCF does not normalize path spellings because exact bytes affect interchange identity and impact

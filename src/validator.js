@@ -1,14 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import fg from 'fast-glob';
-
 import { appendJsonPointer, createDiagnostic } from './diagnostics.js';
 import {
   contentGroups,
   discoverContentGroups,
+  discoverRegularFiles,
   loadKnowledgeFile,
-  loadStructuredFile
+  loadStructuredFile,
+  validateContentPattern
 } from './formats.js';
 import { validatePortablePath } from './interchange.js';
 import { createSchemaValidator, schemaIds } from './schema-catalog.js';
@@ -114,6 +114,14 @@ function validateManifestPortablePaths(result, manifest, manifestFile) {
         `/content/${group}/${index}`,
         `${group} content pattern`
       );
+      if (typeof pattern === 'string') {
+        try {
+          validateContentPattern(pattern);
+        } catch (error) {
+          result.errors.push(diagnostic('error', 'content.pattern_invalid', manifestFile,
+            error.message, appendJsonPointer(appendJsonPointer('/content', group), index)));
+        }
+      }
     }
   }
   const sources = Array.isArray(manifest?.sources) ? manifest.sources : [];
@@ -419,14 +427,7 @@ async function findManifest(root) {
 }
 
 async function discoverFiles(root, manifest, result) {
-  const absoluteFiles = await fg('**/*', {
-    absolute: true,
-    cwd: root,
-    dot: false,
-    followSymbolicLinks: false,
-    onlyFiles: true,
-    unique: true
-  });
+  const absoluteFiles = await discoverRegularFiles(root);
   const absoluteByRelative = new Map(
     absoluteFiles.map((filePath) => [relativeDisplay(root, filePath), filePath])
   );
@@ -1252,6 +1253,8 @@ export async function validatePack(packPath, options = {}) {
     addSchemaDiagnostics(result, manifestFile, validateManifest.errors);
     return result;
   }
+
+  if (result.errors.some((item) => item.code === 'content.pattern_invalid')) return result;
 
   result.pack = { id: manifest.id, version: manifest.version, root };
   const discovered = await discoverFiles(root, manifest, result);

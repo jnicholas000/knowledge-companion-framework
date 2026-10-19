@@ -25,6 +25,26 @@ For non-trivial work:
 GitHub Copilot contributors may follow this flow with standard repository instructions and ordinary
 pull requests. Custom agents and external orchestration are not required.
 
+## Codex Remote Execution
+
+This repository includes a project-scoped `.codex/config.toml` for trusted Codex sessions that
+work on the repository remotely or locally.
+
+The configuration is intentionally bounded:
+
+- ordinary repository reads, edits, tests, and reports run within `workspace-write`;
+- eligible approval requests use the Codex auto-reviewer while `approval_policy` remains
+  `on-request`;
+- spawned-agent concurrency is limited to one additional thread;
+- outbound network access remains disabled by default;
+- the configuration does not grant full filesystem access, bypass organization policy, or
+  self-authorize destructive, external, production, credential, or otherwise ambiguous actions.
+
+Project-scoped Codex configuration is loaded only when the project is trusted. Host, account, and
+organization controls remain authoritative. If a task needs network access, a broader writable root,
+an external mutation, or another elevated capability, make that boundary explicit and obtain the
+required approval.
+
 ## Commands And Quality Gates
 
 Use Node.js 20 or later. Before completion, run:

@@ -1,4 +1,4 @@
-import micromatch from 'micromatch';
+import picomatch from 'picomatch';
 
 import { identifyChangeSet, normalizeChangeSet } from './change-set.js';
 import { discoverContentGroups, parseKnowledgeSource, parseStructuredSource } from './formats.js';
@@ -59,7 +59,7 @@ function validatePattern(value, field) {
   let pattern;
   try {
     pattern = validatePortablePath(value, field);
-    micromatch.makeRe(pattern, matchOptions);
+    picomatch.makeRe(pattern, matchOptions);
   } catch (error) {
     fail('impact.locator_invalid', `${field} is not a valid path pattern: ${error.message}`);
   }
@@ -68,7 +68,7 @@ function validatePattern(value, field) {
 
 function matches(pattern, candidate) {
   return hasGlob(pattern)
-    ? micromatch.isMatch(candidate, pattern, matchOptions)
+    ? picomatch.isMatch(candidate, pattern, matchOptions)
     : candidate === pattern;
 }
 
@@ -120,7 +120,13 @@ function parsePack(verified) {
   } catch (error) {
     fail('impact.pack_invalid', `pack.yaml cannot be parsed: ${error.message}`);
   }
-  const { discovered, overlaps } = discoverContentGroups(manifest, [...verified.files.keys()]);
+  let discovery;
+  try {
+    discovery = discoverContentGroups(manifest, [...verified.files.keys()]);
+  } catch (error) {
+    fail('impact.pack_invalid', `pack.yaml content patterns are invalid: ${error.message}`);
+  }
+  const { discovered, overlaps } = discovery;
   if (overlaps.length > 0) {
     fail('impact.pack_invalid', `${overlaps[0].path} belongs to multiple content groups`);
   }
