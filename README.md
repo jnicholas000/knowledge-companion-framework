@@ -61,6 +61,19 @@ Validate another pack:
 node src/cli.js validate path/to/pack --strict
 ```
 
+Render a deterministic Current Implementation view from validated, accepted pack knowledge:
+
+```sh
+node src/cli.js current-implementation path/to/pack \
+  --output /path/outside/the/pack/CURRENT_IMPLEMENTATION.md \
+  --as-of 2026-11-02
+```
+
+The output path is required and must be outside the pack. `--as-of` is optional and fixes freshness
+assessment to the end of the given UTC date. The view is derived output: it preserves claim status,
+evidence revisions, and pending re-verification state, but does not verify evidence or modify pack
+knowledge.
+
 `--strict` promotes freshness and quality warnings to errors. `--json` emits stable diagnostic
 codes and JSON Pointer locations. See the [authoring guide](docs/guides/authoring.md).
 
